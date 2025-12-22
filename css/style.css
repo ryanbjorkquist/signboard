@@ -115,7 +115,7 @@ body {
 }
 
 /* =============================================
-   MAIN GRID - ONE CONTINUOUS BOARD
+   MAIN GRID - Weather/Transit left, Calendar right
    ============================================= */
 
 .board-grid {
@@ -123,10 +123,25 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
+    grid-template-areas:
+        "weather calendar"
+        "transit calendar";
     gap: 0;
     min-height: 0;
     background: var(--board-bg);
     padding: 0;
+}
+
+.weather-section {
+    grid-area: weather;
+}
+
+.transit-section {
+    grid-area: transit;
+}
+
+.calendar-section {
+    grid-area: calendar;
 }
 
 .board-section {

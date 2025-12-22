@@ -18,11 +18,9 @@ class TransitBoardApp {
             transitAgency: 'SF',
             maxStops: 5,
             favoriteStops: '',
-            newsSource: 'sfstandard',
-            maxNewsItems: 10,
-            googleClientId: '',
+            calendarId: 'ebgs7j9vj5tn2gs6gt3f2gvgtc@group.calendar.google.com',
             googleApiKey: '',
-            calendarDays: 3
+            calendarDays: 7
         };
 
         this.settings = { ...this.defaultSettings };
@@ -167,8 +165,7 @@ class TransitBoardApp {
             'refreshInterval', 'theme', 'useLocation',
             'weatherApiKey', 'weatherLocation', 'tempUnit',
             'transitApiKey', 'transitAgency', 'maxStops', 'favoriteStops',
-            'maxNewsItems',
-            'googleClientId', 'googleApiKey', 'calendarDays'
+            'calendarId', 'googleApiKey', 'calendarDays'
         ];
 
         fields.forEach(field => {
@@ -188,8 +185,7 @@ class TransitBoardApp {
             'refreshInterval', 'theme', 'useLocation',
             'weatherApiKey', 'weatherLocation', 'tempUnit',
             'transitApiKey', 'transitAgency', 'maxStops', 'favoriteStops',
-            'maxNewsItems',
-            'googleClientId', 'googleApiKey', 'calendarDays'
+            'calendarId', 'googleApiKey', 'calendarDays'
         ];
 
         fields.forEach(field => {
@@ -215,10 +211,8 @@ class TransitBoardApp {
             transitService.configure(this.settings.transitApiKey, this.settings.transitAgency);
         }
 
-        newsService.setSource('sfstandard');
-
-        if (this.settings.googleClientId && this.settings.googleApiKey) {
-            calendarService.configure(this.settings.googleClientId, this.settings.googleApiKey);
+        if (this.settings.googleApiKey && this.settings.calendarId) {
+            calendarService.configure(this.settings.googleApiKey, this.settings.calendarId);
         }
     }
 
@@ -277,33 +271,6 @@ class TransitBoardApp {
             });
         });
 
-        // Google Calendar auth
-        const googleAuthBtn = document.getElementById('googleAuthBtn');
-        if (googleAuthBtn) {
-            googleAuthBtn.addEventListener('click', async () => {
-                try {
-                    this.settings.googleClientId = document.getElementById('googleClientId')?.value;
-                    this.settings.googleApiKey = document.getElementById('googleApiKey')?.value;
-
-                    if (!this.settings.googleClientId || !this.settings.googleApiKey) {
-                        this.updateAuthStatus('Enter Client ID and API Key first', 'error');
-                        return;
-                    }
-
-                    calendarService.configure(this.settings.googleClientId, this.settings.googleApiKey);
-                    this.updateAuthStatus('Authenticating...', 'pending');
-
-                    await calendarService.authenticate();
-                    this.updateAuthStatus('Connected!', 'success');
-                    this.saveSettings();
-                    this.updateCalendar();
-                } catch (error) {
-                    console.error('Calendar auth failed:', error);
-                    this.updateAuthStatus('Authentication failed', 'error');
-                }
-            });
-        }
-
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && settingsModal?.classList.contains('active')) {
@@ -314,14 +281,6 @@ class TransitBoardApp {
                 settingsModal?.classList.add('active');
             }
         });
-    }
-
-    updateAuthStatus(message, type) {
-        const statusEl = document.getElementById('googleAuthStatus');
-        if (statusEl) {
-            statusEl.textContent = message;
-            statusEl.className = type;
-        }
     }
 
     // =============================================
@@ -361,7 +320,6 @@ class TransitBoardApp {
         await Promise.all([
             this.updateWeather().catch(e => console.error('Weather update failed:', e)),
             this.updateTransit().catch(e => console.error('Transit update failed:', e)),
-            this.updateNews().catch(e => console.error('News update failed:', e)),
             this.updateCalendar().catch(e => console.error('Calendar update failed:', e))
         ]);
 
@@ -549,60 +507,6 @@ class TransitBoardApp {
     }
 
     // =============================================
-    // NEWS SECTION
-    // =============================================
-
-    async updateNews() {
-        const tickerEl = document.getElementById('newsTicker');
-        if (!tickerEl) return;
-
-        try {
-            const news = await newsService.fetchNews(this.settings.maxNewsItems);
-            this.renderNews(tickerEl, news);
-        } catch (error) {
-            console.error('News error:', error);
-            this.renderNewsError(tickerEl, error.message);
-        }
-    }
-
-    renderNews(container, news) {
-        if (news.length === 0) {
-            container.innerHTML = `
-                <div class="news-item">
-                    ${this.flapRow('NO NEWS AVAILABLE', 'small')}
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = news.slice(0, 5).map((item, idx) => {
-            const time = NewsService.formatRelativeTime(item.pubDate).toUpperCase();
-            const title = item.title.toUpperCase().substring(0, 40);
-            const rowColor = this.getRowColor(idx);
-
-            return `
-                <div class="news-item" onclick="window.open('${item.link}', '_blank')">
-                    <div class="news-time-display">
-                        <div class="flap-row small">${this.timeFlaps(time.padEnd(6, ' ').substring(0, 6))}</div>
-                    </div>
-                    <div class="news-headline-display">
-                        <div class="flap-row small">${this.colorFlaps(title.padEnd(40, ' '), rowColor)}</div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-        this.playFlapSound();
-    }
-
-    renderNewsError(container, message) {
-        container.innerHTML = `
-            <div class="news-item">
-                ${this.flapRow('NEWS UNAVAILABLE', 'small')}
-            </div>
-        `;
-    }
-
-    // =============================================
     // CALENDAR SECTION
     // =============================================
 
@@ -615,23 +519,12 @@ class TransitBoardApp {
             return;
         }
 
-        calendarService.restoreSession();
-
-        if (!calendarService.isAuthenticated()) {
-            this.renderCalendarNotAuthenticated(listEl);
-            return;
-        }
-
         try {
-            const events = await calendarService.getUpcomingEvents(this.settings.calendarDays);
+            const events = await calendarService.getUpcomingEvents(this.settings.calendarDays, 12);
             this.renderCalendar(listEl, events);
         } catch (error) {
             console.error('Calendar error:', error);
-            if (error.message.includes('Not authenticated')) {
-                this.renderCalendarNotAuthenticated(listEl);
-            } else {
-                this.renderCalendarError(listEl, error.message);
-            }
+            this.renderCalendarError(listEl, error.message);
         }
     }
 
@@ -645,10 +538,11 @@ class TransitBoardApp {
             return;
         }
 
-        container.innerHTML = events.slice(0, 5).map((event, idx) => {
-            const dateStr = CalendarService.formatEventDate(event).toUpperCase().substring(0, 8);
+        // Show up to 10 events since calendar has full right side
+        container.innerHTML = events.slice(0, 10).map((event, idx) => {
+            const dateStr = CalendarService.formatEventDate(event).toUpperCase().substring(0, 10);
             const timeStr = CalendarService.formatEventTime(event).toUpperCase().substring(0, 8);
-            const title = event.title.toUpperCase().substring(0, 22).padEnd(22, ' ');
+            const title = event.title.toUpperCase().substring(0, 28).padEnd(28, ' ');
             const rowColor = this.getRowColor(idx);
 
             let eventClass = 'calendar-event';
@@ -658,36 +552,25 @@ class TransitBoardApp {
             return `
                 <div class="${eventClass}">
                     <div class="event-time-display">
-                        <div class="flap-row small">${this.colorFlaps(dateStr.padEnd(8, ' '), rowColor)}</div>
+                        <div class="flap-row small">${this.colorFlaps(dateStr.padEnd(10, ' '), rowColor)}</div>
                         <div class="flap-row small">${this.timeFlaps(timeStr.padEnd(8, ' '))}</div>
                     </div>
                     <div class="event-details-display">
                         <div class="flap-row small">${this.colorFlaps(title, rowColor)}</div>
-                        ${event.location ? `<div class="flap-row small">${this.toFlaps(event.location.toUpperCase().substring(0, 22).padEnd(22, ' '))}</div>` : ''}
                     </div>
                 </div>
             `;
         }).join('');
+        this.playFlapSound();
     }
 
     renderCalendarPlaceholder(container) {
         container.innerHTML = `
             <div class="calendar-event">
-                ${this.flapRow('ADD GOOGLE CREDENTIALS', 'small')}
+                ${this.flapRow('ADD GOOGLE API KEY', 'small')}
             </div>
             <div class="calendar-event">
                 ${this.flapRow('IN SETTINGS', 'small')}
-            </div>
-        `;
-    }
-
-    renderCalendarNotAuthenticated(container) {
-        container.innerHTML = `
-            <div class="calendar-event">
-                ${this.flapRow('CALENDAR NOT CONNECTED', 'small')}
-            </div>
-            <div class="calendar-event">
-                ${this.flapRow('CLICK CONNECT IN SETTINGS', 'small')}
             </div>
         `;
     }
@@ -696,6 +579,9 @@ class TransitBoardApp {
         container.innerHTML = `
             <div class="calendar-event">
                 ${this.flapRow('CALENDAR ERROR', 'small')}
+            </div>
+            <div class="calendar-event">
+                ${this.flapRow(message.substring(0, 25).toUpperCase(), 'small')}
             </div>
         `;
     }

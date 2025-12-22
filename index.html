@@ -20,7 +20,7 @@
 
         <!-- Main Display Grid -->
         <main class="board-grid">
-            <!-- Weather Section -->
+            <!-- Weather Section - Top Left -->
             <section class="board-section weather-section" id="weatherSection">
                 <div class="section-header">
                     <span class="section-icon">☀</span>
@@ -35,7 +35,20 @@
                 </div>
             </section>
 
-            <!-- Transit Section -->
+            <!-- Calendar Section - Full Right Side -->
+            <section class="board-section calendar-section" id="calendarSection">
+                <div class="section-header">
+                    <span class="section-icon">📅</span>
+                    <span class="section-title">CALENDAR</span>
+                </div>
+                <div class="section-content" id="calendarContent">
+                    <div class="calendar-list" id="calendarList">
+                        <!-- Calendar events will be inserted here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Transit Section - Bottom Left -->
             <section class="board-section transit-section" id="transitSection">
                 <div class="section-header">
                     <span class="section-icon">🚇</span>
@@ -45,30 +58,6 @@
                 <div class="section-content" id="transitContent">
                     <div class="transit-list" id="transitList">
                         <!-- Transit rows will be inserted here -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- News Section -->
-            <section class="board-section news-section" id="newsSection">
-                <div class="section-header">
-                    <span class="section-icon">📰</span>
-                    <span class="section-title">NEWS</span>
-                </div>
-                <div class="section-content" id="newsContent">
-                    <div class="news-ticker" id="newsTicker"></div>
-                </div>
-            </section>
-
-            <!-- Calendar Section -->
-            <section class="board-section calendar-section" id="calendarSection">
-                <div class="section-header">
-                    <span class="section-icon">📅</span>
-                    <span class="section-title">CALENDAR</span>
-                </div>
-                <div class="section-content" id="calendarContent">
-                    <div class="calendar-list" id="calendarList">
-                        <!-- Calendar events will be inserted here -->
                     </div>
                 </div>
             </section>
@@ -93,7 +82,6 @@
                     <button class="tab-btn active" data-tab="general">General</button>
                     <button class="tab-btn" data-tab="weather">Weather</button>
                     <button class="tab-btn" data-tab="transit">Transit</button>
-                    <button class="tab-btn" data-tab="news">News</button>
                     <button class="tab-btn" data-tab="calendar">Calendar</button>
                 </div>
 
@@ -167,37 +155,21 @@
                     </div>
                 </div>
 
-                <!-- News Settings -->
-                <div class="tab-content" id="tab-news">
-                    <div class="form-group">
-                        <label>News Source</label>
-                        <p style="color: var(--text-primary); margin: 0.5rem 0;">SF Standard</p>
-                        <small>Local SF news from <a href="https://sfstandard.com" target="_blank">sfstandard.com</a></small>
-                    </div>
-                    <div class="form-group">
-                        <label for="maxNewsItems">Max news items</label>
-                        <input type="number" id="maxNewsItems" min="3" max="20" value="10">
-                    </div>
-                </div>
-
                 <!-- Calendar Settings -->
                 <div class="tab-content" id="tab-calendar">
                     <div class="form-group">
-                        <label for="googleClientId">Google Client ID</label>
-                        <input type="text" id="googleClientId" placeholder="Enter Client ID">
-                        <small>Create credentials at <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a></small>
+                        <label for="calendarId">Public Google Calendar ID</label>
+                        <input type="text" id="calendarId" placeholder="calendar-id@group.calendar.google.com" value="ebgs7j9vj5tn2gs6gt3f2gvgtc@group.calendar.google.com">
+                        <small>The calendar ID from your public Google Calendar URL</small>
                     </div>
                     <div class="form-group">
                         <label for="googleApiKey">Google API Key</label>
                         <input type="password" id="googleApiKey" placeholder="Enter API key">
-                    </div>
-                    <div class="form-group">
-                        <button class="btn" id="googleAuthBtn">Connect Google Calendar</button>
-                        <span id="googleAuthStatus"></span>
+                        <small>Get a free key at <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a> (enable Calendar API)</small>
                     </div>
                     <div class="form-group">
                         <label for="calendarDays">Show events for next (days)</label>
-                        <input type="number" id="calendarDays" min="1" max="14" value="3">
+                        <input type="number" id="calendarDays" min="1" max="14" value="7">
                     </div>
                 </div>
             </div>
@@ -212,7 +184,6 @@
     <script src="js/splitflap.js"></script>
     <script src="js/services/weather.js"></script>
     <script src="js/services/transit.js"></script>
-    <script src="js/services/news.js"></script>
     <script src="js/services/calendar.js"></script>
     <script src="js/app.js"></script>
 </body>
