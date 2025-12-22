@@ -134,7 +134,7 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    padding: 8px;
+    padding: 12px;
 }
 
 .section-header {
@@ -165,103 +165,97 @@ body {
 }
 
 /* =============================================
-   SPLIT-FLAP CHARACTERS - The main visual
+   SPLIT-FLAP CHARACTERS - Oat Foundry Style
+   High contrast, large, legible
    ============================================= */
 
 .flap-char {
-    display: inline-block;
-    width: 1.2em;
-    height: 1.8em;
-    background: linear-gradient(
-        to bottom,
-        #1c1c1c 0%,
-        #1a1a1a 45%,
-        #000000 45%,
-        #000000 55%,
-        #1a1a1a 55%,
-        #1c1c1c 100%
-    );
-    color: var(--flap-text);
-    text-align: center;
-    line-height: 1.8em;
-    font-weight: 700;
-    border: 1px solid #333;
-    border-radius: 2px;
-    margin: 1px;
-    box-shadow:
-        0 3px 6px rgba(0,0,0,0.8),
-        inset 0 1px 0 rgba(255,255,255,0.05),
-        inset 0 -1px 0 rgba(0,0,0,0.5);
-    text-shadow: 0 0 12px currentColor, 0 0 4px currentColor;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 0.9em;
+    height: 1.4em;
+    background: #2a2a2a;
+    color: #fff;
+    font-weight: 800;
+    font-size: inherit;
+    border-radius: 3px;
+    margin: 2px 1px;
     position: relative;
+    box-shadow:
+        0 2px 4px rgba(0,0,0,0.5),
+        inset 0 0 0 1px rgba(255,255,255,0.05);
 }
 
-/* Strong horizontal split line */
+/* THE SPLIT - prominent dark gap through middle */
 .flap-char::after {
     content: '';
     position: absolute;
     top: 50%;
-    left: 0;
-    right: 0;
-    height: 2px;
+    left: -1px;
+    right: -1px;
+    height: 3px;
     background: #000;
-    box-shadow: 0 1px 0 rgba(255,255,255,0.05);
     transform: translateY(-50%);
+    z-index: 2;
 }
 
-/* Top half shine */
+/* Top half slightly lighter */
 .flap-char::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 48%;
-    background: linear-gradient(to bottom, rgba(255,255,255,0.04) 0%, transparent 100%);
+    height: calc(50% - 1px);
+    background: rgba(255,255,255,0.03);
+    border-radius: 3px 3px 0 0;
     pointer-events: none;
-    border-radius: 2px 2px 0 0;
 }
 
 .flap-row {
     display: flex;
     align-items: center;
-    flex-wrap: nowrap;
-    padding: 2px 0;
-    font-size: 14px;
+    flex-wrap: wrap;
+    padding: 3px 0;
+    font-size: 18px;
+    line-height: 1;
 }
 
 .flap-row.large {
-    font-size: 22px;
+    font-size: 32px;
 }
 
 .flap-row.small {
-    font-size: 11px;
+    font-size: 14px;
 }
 
 .flap-row.medium {
-    font-size: 13px;
+    font-size: 20px;
 }
 
-/* Accent flaps (yellow background) */
+/* Accent flaps - YELLOW background, black text (like Oat Foundry) */
 .flap-char.accent {
-    background: linear-gradient(
-        to bottom,
-        var(--accent) 0%,
-        var(--accent) 48%,
-        var(--accent-dim) 48%,
-        var(--accent-dim) 52%,
-        var(--accent) 52%,
-        var(--accent) 100%
-    );
+    background: #f5c518;
     color: #000;
-    border-color: var(--accent-dim);
-    text-shadow: none;
 }
 
-/* Success flaps (green text) */
+.flap-char.accent::before {
+    background: rgba(255,255,255,0.15);
+}
+
+.flap-char.accent::after {
+    background: #9a7b00;
+}
+
+/* Success flaps - GREEN background */
 .flap-char.success {
-    color: var(--success);
-    text-shadow: 0 0 10px var(--success);
+    background: #22c55e;
+    color: #000;
+}
+
+.flap-char.success::after {
+    background: #15803d;
 }
 
 /* =============================================
@@ -632,26 +626,33 @@ body {
     }
 
     .flap-row {
-        font-size: 12px;
+        font-size: 16px;
     }
 
     .flap-row.large {
-        font-size: 18px;
+        font-size: 28px;
     }
 
     .flap-row.small {
-        font-size: 10px;
+        font-size: 12px;
     }
 }
 
 @media (max-width: 600px) {
     .flap-char {
-        width: 1.05em;
-        margin: 0;
+        margin: 1px;
+    }
+
+    .flap-row {
+        font-size: 14px;
+    }
+
+    .flap-row.large {
+        font-size: 24px;
     }
 
     .flap-row.small {
-        font-size: 9px;
+        font-size: 11px;
     }
 }
 
