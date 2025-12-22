@@ -17,8 +17,7 @@ class TransitBoardApp {
             transitAgency: 'SF',
             maxStops: 5,
             favoriteStops: '',
-            newsSource: 'kqed',
-            customRss: '',
+            newsSource: 'sfstandard',
             maxNewsItems: 10,
             googleClientId: '',
             googleApiKey: '',
@@ -119,7 +118,7 @@ class TransitBoardApp {
             'refreshInterval', 'theme', 'useLocation',
             'weatherApiKey', 'weatherLocation', 'tempUnit',
             'transitApiKey', 'transitAgency', 'maxStops', 'favoriteStops',
-            'newsSource', 'customRss', 'maxNewsItems',
+            'maxNewsItems',
             'googleClientId', 'googleApiKey', 'calendarDays'
         ];
 
@@ -134,11 +133,6 @@ class TransitBoardApp {
             }
         });
 
-        // Toggle custom RSS visibility
-        const customRssGroup = document.getElementById('customRssGroup');
-        if (customRssGroup) {
-            customRssGroup.style.display = this.settings.newsSource === 'custom' ? 'block' : 'none';
-        }
     }
 
     /**
@@ -149,7 +143,7 @@ class TransitBoardApp {
             'refreshInterval', 'theme', 'useLocation',
             'weatherApiKey', 'weatherLocation', 'tempUnit',
             'transitApiKey', 'transitAgency', 'maxStops', 'favoriteStops',
-            'newsSource', 'customRss', 'maxNewsItems',
+            'maxNewsItems',
             'googleClientId', 'googleApiKey', 'calendarDays'
         ];
 
@@ -181,8 +175,8 @@ class TransitBoardApp {
             transitService.configure(this.settings.transitApiKey, this.settings.transitAgency);
         }
 
-        // News service
-        newsService.setSource(this.settings.newsSource, this.settings.customRss);
+        // News service - SF Standard only
+        newsService.setSource('sfstandard');
 
         // Calendar service
         if (this.settings.googleClientId && this.settings.googleApiKey) {
@@ -264,15 +258,6 @@ class TransitBoardApp {
                 document.getElementById(`tab-${tabId}`)?.classList.add('active');
             });
         });
-
-        // News source change
-        const newsSourceSelect = document.getElementById('newsSource');
-        const customRssGroup = document.getElementById('customRssGroup');
-        if (newsSourceSelect && customRssGroup) {
-            newsSourceSelect.addEventListener('change', () => {
-                customRssGroup.style.display = newsSourceSelect.value === 'custom' ? 'block' : 'none';
-            });
-        }
 
         // Google Calendar auth
         const googleAuthBtn = document.getElementById('googleAuthBtn');

@@ -12,39 +12,15 @@ class NewsService {
             'https://api.codetabs.com/v1/proxy?quest='
         ];
 
-        // Predefined RSS feed URLs for SF news sources
+        // SF Standard RSS feed
         this.sources = {
-            kqed: {
-                name: 'KQED',
-                url: 'https://www.kqed.org/news/feed'
-            },
-            sfchronicle: {
-                name: 'SF Chronicle',
-                url: 'https://www.sfchronicle.com/bayarea/feed/Bay-Area-News-702.php'
-            },
-            sfgate: {
-                name: 'SFGate',
-                url: 'https://www.sfgate.com/bayarea/feed/Bay-Area-News-702.php'
-            },
-            sfexaminer: {
-                name: 'SF Examiner',
-                url: 'https://www.sfexaminer.com/feed/'
-            },
-            missionlocal: {
-                name: 'Mission Local',
-                url: 'https://missionlocal.org/feed/'
-            },
-            hoodline: {
-                name: 'Hoodline SF',
-                url: 'https://hoodline.com/san-francisco/rss'
-            },
             sfstandard: {
                 name: 'SF Standard',
                 url: 'https://sfstandard.com/feed/'
             }
         };
 
-        this.currentSource = 'kqed';
+        this.currentSource = 'sfstandard';
         this.customRssUrl = null;
         this.cache = null;
         this.cacheTime = 0;
