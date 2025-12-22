@@ -115,7 +115,7 @@ body {
 }
 
 /* =============================================
-   MAIN GRID - Seamless board
+   MAIN GRID - ONE CONTINUOUS BOARD
    ============================================= */
 
 .board-grid {
@@ -123,10 +123,10 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
-    gap: 4px;
+    gap: 0;
     min-height: 0;
-    background: #111;
-    padding: 4px;
+    background: var(--board-bg);
+    padding: 0;
 }
 
 .board-section {
@@ -134,35 +134,23 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    padding: 4px;
+    padding: 8px;
 }
 
 .section-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 0;
-    margin-bottom: 4px;
-    border-bottom: 1px solid #222;
+    display: none; /* Hide section headers for seamless look */
 }
 
 .section-icon {
-    font-size: 12px;
-    opacity: 0.7;
+    display: none;
 }
 
 .section-title {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    color: var(--label-color);
-    text-transform: uppercase;
+    display: none;
 }
 
 .location-indicator {
-    margin-left: auto;
-    font-size: 10px;
-    animation: pulse 2s infinite;
+    display: none;
 }
 
 @keyframes pulse {
@@ -182,42 +170,56 @@ body {
 
 .flap-char {
     display: inline-block;
-    width: 1.15em;
-    height: 1.7em;
+    width: 1.2em;
+    height: 1.8em;
     background: linear-gradient(
         to bottom,
-        var(--flap-bg) 0%,
-        var(--flap-bg) 48%,
-        var(--flap-divider) 48%,
-        var(--flap-divider) 52%,
-        var(--flap-bg) 52%,
-        var(--flap-bg) 100%
+        #1c1c1c 0%,
+        #1a1a1a 45%,
+        #000000 45%,
+        #000000 55%,
+        #1a1a1a 55%,
+        #1c1c1c 100%
     );
     color: var(--flap-text);
     text-align: center;
-    line-height: 1.7em;
+    line-height: 1.8em;
     font-weight: 700;
-    border: 1px solid var(--flap-border);
-    border-radius: 3px;
-    margin: 0 1px;
+    border: 1px solid #333;
+    border-radius: 2px;
+    margin: 1px;
     box-shadow:
-        0 2px 4px var(--flap-shadow),
-        inset 0 1px 0 rgba(255,255,255,0.03),
-        inset 0 -1px 0 rgba(0,0,0,0.3);
-    text-shadow: 0 0 8px currentColor;
+        0 3px 6px rgba(0,0,0,0.8),
+        inset 0 1px 0 rgba(255,255,255,0.05),
+        inset 0 -1px 0 rgba(0,0,0,0.5);
+    text-shadow: 0 0 12px currentColor, 0 0 4px currentColor;
     position: relative;
 }
 
-/* Subtle 3D effect on flaps */
+/* Strong horizontal split line */
+.flap-char::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #000;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.05);
+    transform: translateY(-50%);
+}
+
+/* Top half shine */
 .flap-char::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 49%;
-    background: linear-gradient(to bottom, rgba(255,255,255,0.02) 0%, transparent 100%);
+    height: 48%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.04) 0%, transparent 100%);
     pointer-events: none;
+    border-radius: 2px 2px 0 0;
 }
 
 .flap-row {
@@ -305,7 +307,7 @@ body {
     flex-direction: column;
     align-items: center;
     padding: 4px;
-    background: #0d0d0d;
+    background: transparent;
 }
 
 .forecast-day .flap-row {
@@ -331,8 +333,8 @@ body {
     display: flex;
     align-items: center;
     gap: 4px;
-    padding: 2px 0;
-    background: #0d0d0d;
+    padding: 4px 0;
+    background: transparent;
 }
 
 .transit-line-display {
@@ -359,13 +361,13 @@ body {
 }
 
 .news-item {
-    padding: 3px;
-    background: #0d0d0d;
+    padding: 6px 0;
+    background: transparent;
     cursor: pointer;
 }
 
 .news-item:hover {
-    background: #151515;
+    background: rgba(255,255,255,0.02);
 }
 
 .news-time-display {
@@ -390,8 +392,8 @@ body {
     display: flex;
     align-items: flex-start;
     gap: 6px;
-    padding: 3px;
-    background: #0d0d0d;
+    padding: 6px 0;
+    background: transparent;
 }
 
 .calendar-event.today {
