@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SF Transit Board</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="board-header">
+            <h1 class="board-title">SF TRANSIT BOARD</h1>
+            <div class="clock" id="clock"></div>
+            <button class="settings-btn" id="settingsBtn" aria-label="Settings">⚙</button>
+        </header>
+
+        <!-- Main Display Grid -->
+        <main class="board-grid">
+            <!-- Weather Section -->
+            <section class="board-section weather-section" id="weatherSection">
+                <div class="section-header">
+                    <span class="section-icon">☀</span>
+                    <span class="section-title">WEATHER</span>
+                </div>
+                <div class="section-content" id="weatherContent">
+                    <div class="weather-main">
+                        <div class="split-flap-row" id="weatherTemp"></div>
+                        <div class="weather-condition" id="weatherCondition"></div>
+                    </div>
+                    <div class="weather-forecast" id="weatherForecast"></div>
+                </div>
+            </section>
+
+            <!-- Transit Section -->
+            <section class="board-section transit-section" id="transitSection">
+                <div class="section-header">
+                    <span class="section-icon">🚇</span>
+                    <span class="section-title">MUNI ARRIVALS</span>
+                    <span class="location-indicator" id="locationIndicator">📍</span>
+                </div>
+                <div class="section-content" id="transitContent">
+                    <div class="transit-list" id="transitList">
+                        <!-- Transit rows will be inserted here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- News Section -->
+            <section class="board-section news-section" id="newsSection">
+                <div class="section-header">
+                    <span class="section-icon">📰</span>
+                    <span class="section-title">NEWS</span>
+                </div>
+                <div class="section-content" id="newsContent">
+                    <div class="news-ticker" id="newsTicker"></div>
+                </div>
+            </section>
+
+            <!-- Calendar Section -->
+            <section class="board-section calendar-section" id="calendarSection">
+                <div class="section-header">
+                    <span class="section-icon">📅</span>
+                    <span class="section-title">CALENDAR</span>
+                </div>
+                <div class="section-content" id="calendarContent">
+                    <div class="calendar-list" id="calendarList">
+                        <!-- Calendar events will be inserted here -->
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+            <span class="status-item" id="lastUpdate">Last updated: --:--</span>
+            <span class="status-item" id="connectionStatus">●  Connected</span>
+        </footer>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button class="close-btn" id="closeSettings">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-tabs">
+                    <button class="tab-btn active" data-tab="general">General</button>
+                    <button class="tab-btn" data-tab="weather">Weather</button>
+                    <button class="tab-btn" data-tab="transit">Transit</button>
+                    <button class="tab-btn" data-tab="news">News</button>
+                    <button class="tab-btn" data-tab="calendar">Calendar</button>
+                </div>
+
+                <!-- General Settings -->
+                <div class="tab-content active" id="tab-general">
+                    <div class="form-group">
+                        <label for="refreshInterval">Refresh Interval (seconds)</label>
+                        <input type="number" id="refreshInterval" min="30" max="600" value="60">
+                    </div>
+                    <div class="form-group">
+                        <label for="theme">Theme</label>
+                        <select id="theme">
+                            <option value="dark">Dark (Classic)</option>
+                            <option value="light">Light</option>
+                            <option value="amber">Amber CRT</option>
+                            <option value="green">Green CRT</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="useLocation" checked>
+                            Use current location for transit
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Weather Settings -->
+                <div class="tab-content" id="tab-weather">
+                    <div class="form-group">
+                        <label for="weatherApiKey">OpenWeatherMap API Key</label>
+                        <input type="password" id="weatherApiKey" placeholder="Enter API key">
+                        <small>Get a free key at <a href="https://openweathermap.org/api" target="_blank">openweathermap.org</a></small>
+                    </div>
+                    <div class="form-group">
+                        <label for="weatherLocation">Location (if not using GPS)</label>
+                        <input type="text" id="weatherLocation" placeholder="San Francisco, CA">
+                    </div>
+                    <div class="form-group">
+                        <label for="tempUnit">Temperature Unit</label>
+                        <select id="tempUnit">
+                            <option value="fahrenheit">Fahrenheit</option>
+                            <option value="celsius">Celsius</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Transit Settings -->
+                <div class="tab-content" id="tab-transit">
+                    <div class="form-group">
+                        <label for="transitApiKey">511.org API Key</label>
+                        <input type="password" id="transitApiKey" placeholder="Enter API key">
+                        <small>Get a free key at <a href="https://511.org/open-data/token" target="_blank">511.org</a></small>
+                    </div>
+                    <div class="form-group">
+                        <label for="transitAgency">Transit Agency</label>
+                        <select id="transitAgency">
+                            <option value="SF">SF Muni</option>
+                            <option value="BA">BART</option>
+                            <option value="CT">Caltrain</option>
+                            <option value="AC">AC Transit</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="maxStops">Max nearby stops to show</label>
+                        <input type="number" id="maxStops" min="1" max="10" value="5">
+                    </div>
+                    <div class="form-group">
+                        <label for="favoriteStops">Favorite Stop IDs (comma-separated)</label>
+                        <input type="text" id="favoriteStops" placeholder="15551, 15552">
+                        <small>Leave empty to use nearby stops based on location</small>
+                    </div>
+                </div>
+
+                <!-- News Settings -->
+                <div class="tab-content" id="tab-news">
+                    <div class="form-group">
+                        <label for="newsSource">News Source</label>
+                        <select id="newsSource">
+                            <option value="sfchronicle">SF Chronicle</option>
+                            <option value="sfgate">SFGate</option>
+                            <option value="kqed">KQED</option>
+                            <option value="custom">Custom RSS Feed</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="customRssGroup" style="display:none;">
+                        <label for="customRss">Custom RSS URL</label>
+                        <input type="url" id="customRss" placeholder="https://example.com/rss">
+                    </div>
+                    <div class="form-group">
+                        <label for="maxNewsItems">Max news items</label>
+                        <input type="number" id="maxNewsItems" min="3" max="20" value="10">
+                    </div>
+                </div>
+
+                <!-- Calendar Settings -->
+                <div class="tab-content" id="tab-calendar">
+                    <div class="form-group">
+                        <label for="googleClientId">Google Client ID</label>
+                        <input type="text" id="googleClientId" placeholder="Enter Client ID">
+                        <small>Create credentials at <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a></small>
+                    </div>
+                    <div class="form-group">
+                        <label for="googleApiKey">Google API Key</label>
+                        <input type="password" id="googleApiKey" placeholder="Enter API key">
+                    </div>
+                    <div class="form-group">
+                        <button class="btn" id="googleAuthBtn">Connect Google Calendar</button>
+                        <span id="googleAuthStatus"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="calendarDays">Show events for next (days)</label>
+                        <input type="number" id="calendarDays" min="1" max="14" value="3">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="resetSettings">Reset to Defaults</button>
+                <button class="btn btn-primary" id="saveSettings">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/splitflap.js"></script>
+    <script src="js/services/weather.js"></script>
+    <script src="js/services/transit.js"></script>
+    <script src="js/services/news.js"></script>
+    <script src="js/services/calendar.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
