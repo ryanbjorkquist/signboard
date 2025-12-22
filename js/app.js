@@ -14,14 +14,22 @@ class TransitBoardApp {
             weatherApiKey: '',
             weatherLocation: 'San Francisco, CA',
             tempUnit: 'fahrenheit',
-            transitApiKey: '',
-            transitAgency: 'SF',
-            maxStops: 5,
-            favoriteStops: '',
+            // Transit 1
+            transit1ApiKey: '',
+            transit1Agency: 'SF',
+            transit1Stops: '',
+            // Transit 2
+            transit2ApiKey: '',
+            transit2Agency: 'BA',
+            transit2Stops: '',
+            // Calendar
             calendarId: 'ebgs7j9vj5tn2gs6gt3f2gvgtc@group.calendar.google.com',
             googleApiKey: '',
             calendarDays: 7
         };
+
+        // Create second transit service instance
+        this.transitService2 = new TransitService();
 
         this.settings = { ...this.defaultSettings };
         this.refreshTimer = null;
@@ -111,7 +119,7 @@ class TransitBoardApp {
     // =============================================
 
     async init() {
-        console.log('Initializing SF Transit Board...');
+        console.log('Initializing Duncan Station...');
 
         // Load settings
         this.loadSettings();
@@ -125,9 +133,8 @@ class TransitBoardApp {
         // Set up event listeners
         this.setupEventListeners();
 
-        // Start clock
-        this.updateClock();
-        this.clockTimer = setInterval(this.updateClock, 1000);
+        // Update title with date
+        this.updateTitle();
 
         // Initial data fetch
         await this.refresh();
@@ -135,7 +142,25 @@ class TransitBoardApp {
         // Start refresh timer
         this.startRefreshTimer();
 
-        console.log('SF Transit Board initialized');
+        // Update title at midnight
+        this.startTitleTimer();
+
+        console.log('Duncan Station initialized');
+    }
+
+    updateTitle() {
+        const titleEl = document.getElementById('boardTitle');
+        if (titleEl) {
+            const now = new Date();
+            const dayName = now.toLocaleDateString('en-US', { weekday: 'long' });
+            const dateStr = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+            titleEl.textContent = `DUNCAN STATION · ${dayName} · ${dateStr}`;
+        }
+    }
+
+    startTitleTimer() {
+        // Update title every minute to catch midnight
+        setInterval(() => this.updateTitle(), 60000);
     }
 
     loadSettings() {
@@ -164,7 +189,8 @@ class TransitBoardApp {
         const fields = [
             'refreshInterval', 'theme', 'useLocation',
             'weatherApiKey', 'weatherLocation', 'tempUnit',
-            'transitApiKey', 'transitAgency', 'maxStops', 'favoriteStops',
+            'transit1ApiKey', 'transit1Agency', 'transit1Stops',
+            'transit2ApiKey', 'transit2Agency', 'transit2Stops',
             'calendarId', 'googleApiKey', 'calendarDays'
         ];
 
@@ -184,7 +210,8 @@ class TransitBoardApp {
         const fields = [
             'refreshInterval', 'theme', 'useLocation',
             'weatherApiKey', 'weatherLocation', 'tempUnit',
-            'transitApiKey', 'transitAgency', 'maxStops', 'favoriteStops',
+            'transit1ApiKey', 'transit1Agency', 'transit1Stops',
+            'transit2ApiKey', 'transit2Agency', 'transit2Stops',
             'calendarId', 'googleApiKey', 'calendarDays'
         ];
 
@@ -207,8 +234,14 @@ class TransitBoardApp {
             weatherService.setApiKey(this.settings.weatherApiKey);
         }
 
-        if (this.settings.transitApiKey) {
-            transitService.configure(this.settings.transitApiKey, this.settings.transitAgency);
+        // Configure Transit 1
+        if (this.settings.transit1ApiKey) {
+            transitService.configure(this.settings.transit1ApiKey, this.settings.transit1Agency);
+        }
+
+        // Configure Transit 2
+        if (this.settings.transit2ApiKey) {
+            this.transitService2.configure(this.settings.transit2ApiKey, this.settings.transit2Agency);
         }
 
         if (this.settings.googleApiKey && this.settings.calendarId) {
@@ -319,7 +352,8 @@ class TransitBoardApp {
 
         await Promise.all([
             this.updateWeather().catch(e => console.error('Weather update failed:', e)),
-            this.updateTransit().catch(e => console.error('Transit update failed:', e)),
+            this.updateTransit1().catch(e => console.error('Transit 1 update failed:', e)),
+            this.updateTransit2().catch(e => console.error('Transit 2 update failed:', e)),
             this.updateCalendar().catch(e => console.error('Calendar update failed:', e))
         ]);
 
@@ -416,56 +450,73 @@ class TransitBoardApp {
     }
 
     // =============================================
-    // TRANSIT SECTION
+    // TRANSIT SECTIONS (Two feeds)
     // =============================================
 
-    async updateTransit() {
-        const contentEl = document.getElementById('transitContent');
-        const listEl = document.getElementById('transitList');
-        if (!contentEl || !listEl) return;
+    async updateTransit1() {
+        const listEl = document.getElementById('transitList1');
+        if (!listEl) return;
 
         if (!transitService.isConfigured()) {
-            this.renderTransitPlaceholder(listEl);
+            this.renderTransitPlaceholder(listEl, '1');
             return;
         }
 
         try {
-            let departures;
-
-            if (this.settings.favoriteStops) {
-                const stopIds = this.settings.favoriteStops.split(',').map(s => s.trim()).filter(Boolean);
+            let departures = [];
+            if (this.settings.transit1Stops) {
+                const stopIds = this.settings.transit1Stops.split(',').map(s => s.trim()).filter(Boolean);
                 if (stopIds.length > 0) {
                     departures = await transitService.getDeparturesForStops(stopIds);
                 }
             }
-
-            if (!departures && this.settings.useLocation) {
-                departures = await transitService.getDeparturesByCurrentLocation(this.settings.maxStops);
-            }
-
-            this.renderTransit(listEl, departures || []);
+            this.renderTransit(listEl, departures || [], 0);
         } catch (error) {
-            console.error('Transit error:', error);
-            this.renderTransitError(listEl, error.message);
+            console.error('Transit 1 error:', error);
+            this.renderTransitError(listEl);
         }
     }
 
-    renderTransit(container, departures) {
+    async updateTransit2() {
+        const listEl = document.getElementById('transitList2');
+        if (!listEl) return;
+
+        if (!this.transitService2.isConfigured()) {
+            this.renderTransitPlaceholder(listEl, '2');
+            return;
+        }
+
+        try {
+            let departures = [];
+            if (this.settings.transit2Stops) {
+                const stopIds = this.settings.transit2Stops.split(',').map(s => s.trim()).filter(Boolean);
+                if (stopIds.length > 0) {
+                    departures = await this.transitService2.getDeparturesForStops(stopIds);
+                }
+            }
+            this.renderTransit(listEl, departures || [], 3); // Start with different color offset
+        } catch (error) {
+            console.error('Transit 2 error:', error);
+            this.renderTransitError(listEl);
+        }
+    }
+
+    renderTransit(container, departures, colorOffset = 0) {
         if (departures.length === 0) {
             container.innerHTML = `
                 <div class="transit-row">
-                    ${this.flapRow('NO DEPARTURES FOUND', 'small')}
+                    ${this.flapRow('NO DEPARTURES', 'small')}
                 </div>
             `;
             return;
         }
 
-        container.innerHTML = departures.slice(0, 6).map((dep, idx) => {
+        container.innerHTML = departures.slice(0, 4).map((dep, idx) => {
             const line = dep.line.toString().padEnd(3, ' ').substring(0, 3);
-            const dest = (dep.destination || '').substring(0, 16).padEnd(16, ' ');
+            const dest = (dep.destination || '').substring(0, 14).padEnd(14, ' ');
             const mins = dep.minutesAway;
             const timeStr = mins === 0 ? 'NOW ' : `${mins}M`.padStart(4, ' ');
-            const rowColor = this.getRowColor(idx);
+            const rowColor = this.getRowColor(idx + colorOffset);
 
             // Times are always yellow, NOW is green
             const timeFlaps = mins === 0 ? this.successFlaps(timeStr) : this.timeFlaps(timeStr);
@@ -487,10 +538,10 @@ class TransitBoardApp {
         this.playFlapSound();
     }
 
-    renderTransitPlaceholder(container) {
+    renderTransitPlaceholder(container, num) {
         container.innerHTML = `
             <div class="transit-row">
-                ${this.flapRow('ADD 511.ORG API KEY', 'small')}
+                ${this.flapRow(`CONFIGURE TRANSIT ${num}`, 'small')}
             </div>
             <div class="transit-row">
                 ${this.flapRow('IN SETTINGS', 'small')}
@@ -498,7 +549,7 @@ class TransitBoardApp {
         `;
     }
 
-    renderTransitError(container, message) {
+    renderTransitError(container) {
         container.innerHTML = `
             <div class="transit-row">
                 ${this.flapRow('ERROR LOADING DATA', 'small')}
