@@ -114,6 +114,42 @@ class TransitBoardApp {
         }).join('');
     }
 
+    /**
+     * Create urgency-colored flaps for ETA
+     * Green: >10 min, Yellow: 5-10 min, Red: <5 min
+     */
+    urgencyFlaps(text, minutesAway) {
+        let urgencyClass = 'urgency-green';
+        if (minutesAway < 5) {
+            urgencyClass = 'urgency-red';
+        } else if (minutesAway < 10) {
+            urgencyClass = 'urgency-yellow';
+        }
+        return text.split('').map(char => {
+            const displayChar = char === ' ' ? '&nbsp;' : this.escapeHtml(char);
+            return `<span class="flap-char ${urgencyClass}">${displayChar}</span>`;
+        }).join('');
+    }
+
+    /**
+     * Define fixed row width for transit (consistent card count)
+     */
+    get TRANSIT_ROW_WIDTH() {
+        return 40; // Total characters per transit row
+    }
+
+    get TRANSIT_LINE_WIDTH() {
+        return 4; // Line number width
+    }
+
+    get TRANSIT_TIME_WIDTH() {
+        return 5; // Time display width
+    }
+
+    get TRANSIT_DEST_WIDTH() {
+        return this.TRANSIT_ROW_WIDTH - this.TRANSIT_LINE_WIDTH - this.TRANSIT_TIME_WIDTH - 2; // -2 for spacing
+    }
+
     // =============================================
     // INITIALIZATION
     // =============================================
@@ -424,6 +460,7 @@ class TransitBoardApp {
         }
 
         container.innerHTML = html;
+        this.triggerFlipAnimation(container);
         this.playFlapSound();
     }
 
@@ -503,39 +540,61 @@ class TransitBoardApp {
 
     renderTransit(container, departures, colorOffset = 0) {
         if (departures.length === 0) {
+            // Show empty row with full blank cards
+            const emptyRow = 'NO DEPARTURES'.padEnd(this.TRANSIT_ROW_WIDTH, ' ');
             container.innerHTML = `
                 <div class="transit-row">
-                    ${this.flapRow('NO DEPARTURES', 'small')}
+                    <div class="flap-row small">${this.toFlaps(emptyRow)}</div>
                 </div>
             `;
             return;
         }
 
         container.innerHTML = departures.slice(0, 4).map((dep, idx) => {
-            const line = dep.line.toString().padEnd(3, ' ').substring(0, 3);
-            const dest = (dep.destination || '').substring(0, 14).padEnd(14, ' ');
-            const mins = dep.minutesAway;
-            const timeStr = mins === 0 ? 'NOW ' : `${mins}M`.padStart(4, ' ');
-            const rowColor = this.getRowColor(idx + colorOffset);
+            // Line number - padded to fixed width, YELLOW
+            const line = dep.line.toString().toUpperCase().padEnd(this.TRANSIT_LINE_WIDTH, ' ').substring(0, this.TRANSIT_LINE_WIDTH);
 
-            // Times are always yellow, NOW is green
-            const timeFlaps = mins === 0 ? this.successFlaps(timeStr) : this.timeFlaps(timeStr);
+            // Destination - NO TRUNCATION, pad to fill remaining space
+            const dest = (dep.destination || '').toUpperCase().padEnd(this.TRANSIT_DEST_WIDTH, ' ').substring(0, this.TRANSIT_DEST_WIDTH);
+
+            // Time - use urgency coloring
+            const mins = dep.minutesAway;
+            const timeStr = mins === 0 ? ' NOW ' : `${mins}M`.padStart(this.TRANSIT_TIME_WIDTH, ' ');
+
+            // Line numbers are YELLOW
+            const lineFlaps = this.timeFlaps(line);
+
+            // Destination uses row color
+            const rowColor = this.getRowColor(idx + colorOffset);
+            const destFlaps = this.colorFlaps(dest, rowColor);
+
+            // ETA uses urgency-based coloring (red/yellow/green)
+            const timeFlaps = mins === 0 ? this.successFlaps(timeStr) : this.urgencyFlaps(timeStr, mins);
 
             return `
                 <div class="transit-row">
-                    <div class="transit-line-display">
-                        <div class="flap-row small">${this.colorFlaps(line, rowColor)}</div>
-                    </div>
-                    <div class="transit-destination-display">
-                        <div class="flap-row small">${this.colorFlaps(dest.toUpperCase(), rowColor)}</div>
-                    </div>
-                    <div class="transit-time-display">
-                        <div class="flap-row small">${timeFlaps}</div>
-                    </div>
+                    <div class="flap-row small">${lineFlaps}${this.toFlaps(' ')}${destFlaps}${this.toFlaps(' ')}${timeFlaps}</div>
                 </div>
             `;
         }).join('');
+
+        this.triggerFlipAnimation(container);
         this.playFlapSound();
+    }
+
+    /**
+     * Trigger flip animation on newly rendered flaps
+     */
+    triggerFlipAnimation(container) {
+        const flaps = container.querySelectorAll('.flap-char');
+        flaps.forEach((flap, index) => {
+            // Stagger the animation for wave effect
+            setTimeout(() => {
+                flap.classList.add('flipping');
+                // Remove class after animation completes
+                setTimeout(() => flap.classList.remove('flipping'), 150);
+            }, index * 15); // 15ms stagger between each flap
+        });
     }
 
     renderTransitPlaceholder(container, num) {
@@ -612,6 +671,7 @@ class TransitBoardApp {
                 </div>
             `;
         }).join('');
+        this.triggerFlipAnimation(container);
         this.playFlapSound();
     }
 

@@ -1,7 +1,7 @@
 /* SF Transit Board - Full Split-Flap Display */
 
 :root {
-    --board-bg: #0a0a0a;
+    --board-bg: #000;
     --flap-bg: #1a1a1a;
     --flap-text: #ffe566;
     --flap-border: #2a2a2a;
@@ -78,9 +78,10 @@ body {
     align-items: center;
     justify-content: center;
     padding: 12px 20px;
-    background: #111;
+    background: #000;
     margin-bottom: 8px;
     position: relative;
+    border-bottom: 2px solid #222;
 }
 
 .board-title {
@@ -319,6 +320,58 @@ body {
     background: #1f7735;
 }
 
+/* Urgency colors for ETA */
+.flap-char.urgency-green {
+    background: #34c759;
+    color: #000;
+}
+.flap-char.urgency-green::after { background: #1f7735; }
+
+.flap-char.urgency-yellow {
+    background: #f5c518;
+    color: #000;
+}
+.flap-char.urgency-yellow::after { background: #9a7b00; }
+
+.flap-char.urgency-red {
+    background: #ff3b30;
+    color: #fff;
+    animation: pulse-urgent 1s infinite;
+}
+.flap-char.urgency-red::after { background: #992320; }
+
+@keyframes pulse-urgent {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.85; }
+}
+
+/* =============================================
+   FLIP ANIMATION
+   ============================================= */
+
+.flap-char.flipping {
+    animation: flipFlap 0.15s ease-out;
+}
+
+@keyframes flipFlap {
+    0% {
+        transform: rotateX(0deg);
+    }
+    50% {
+        transform: rotateX(-90deg);
+        background: #111;
+    }
+    100% {
+        transform: rotateX(0deg);
+    }
+}
+
+/* Stagger flip animations for a wave effect */
+.flap-row .flap-char {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+}
+
 /* =============================================
    WEATHER SECTION
    ============================================= */
@@ -484,7 +537,8 @@ body {
     align-items: center;
     padding: 6px 12px;
     margin-top: 4px;
-    background: #111;
+    background: #000;
+    border-top: 2px solid #222;
     font-size: 10px;
 }
 
