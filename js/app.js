@@ -1,6 +1,7 @@
 /**
  * SF Transit Board - Main Application
  * Coordinates all services and UI updates
+ * Full split-flap display rendering
  */
 
 class TransitBoardApp {
@@ -29,17 +30,60 @@ class TransitBoardApp {
         this.clockTimer = null;
         this.currentPosition = null;
 
-        // Temperature display
-        this.tempDisplay = null;
-
         // Bind methods
         this.refresh = this.refresh.bind(this);
         this.updateClock = this.updateClock.bind(this);
     }
 
+    // =============================================
+    // SPLIT-FLAP TEXT RENDERING HELPERS
+    // =============================================
+
     /**
-     * Initialize the application
+     * Convert text to split-flap character HTML
      */
+    toFlaps(text, maxLength = null) {
+        if (maxLength) {
+            text = text.substring(0, maxLength).padEnd(maxLength, ' ');
+        }
+        return text.split('').map(char => {
+            const displayChar = char === ' ' ? '&nbsp;' : this.escapeHtml(char);
+            return `<span class="flap-char">${displayChar}</span>`;
+        }).join('');
+    }
+
+    /**
+     * Create a flap row with text
+     */
+    flapRow(text, size = '', maxLength = null) {
+        const sizeClass = size ? ` ${size}` : '';
+        return `<div class="flap-row${sizeClass}">${this.toFlaps(text.toUpperCase(), maxLength)}</div>`;
+    }
+
+    /**
+     * Create accent-colored flaps (for line numbers, etc)
+     */
+    accentFlaps(text) {
+        return text.split('').map(char => {
+            const displayChar = char === ' ' ? '&nbsp;' : this.escapeHtml(char);
+            return `<span class="flap-char accent">${displayChar}</span>`;
+        }).join('');
+    }
+
+    /**
+     * Create success-colored flaps (for "NOW" etc)
+     */
+    successFlaps(text) {
+        return text.split('').map(char => {
+            const displayChar = char === ' ' ? '&nbsp;' : this.escapeHtml(char);
+            return `<span class="flap-char success">${displayChar}</span>`;
+        }).join('');
+    }
+
+    // =============================================
+    // INITIALIZATION
+    // =============================================
+
     async init() {
         console.log('Initializing SF Transit Board...');
 
@@ -48,9 +92,6 @@ class TransitBoardApp {
 
         // Apply theme
         this.applyTheme();
-
-        // Initialize UI components
-        this.initUI();
 
         // Set up event listeners
         this.setupEventListeners();
@@ -68,20 +109,6 @@ class TransitBoardApp {
         console.log('SF Transit Board initialized');
     }
 
-    /**
-     * Initialize UI components
-     */
-    initUI() {
-        // Initialize temperature split-flap display
-        const weatherTempEl = document.getElementById('weatherTemp');
-        if (weatherTempEl) {
-            this.tempDisplay = new TemperatureDisplay(weatherTempEl);
-        }
-    }
-
-    /**
-     * Load settings from localStorage
-     */
     loadSettings() {
         try {
             const stored = localStorage.getItem('transitBoardSettings');
@@ -92,16 +119,10 @@ class TransitBoardApp {
             console.error('Failed to load settings:', error);
         }
 
-        // Apply settings to form fields
         this.applySettingsToForm();
-
-        // Configure services
         this.configureServices();
     }
 
-    /**
-     * Save settings to localStorage
-     */
     saveSettings() {
         try {
             localStorage.setItem('transitBoardSettings', JSON.stringify(this.settings));
@@ -110,9 +131,6 @@ class TransitBoardApp {
         }
     }
 
-    /**
-     * Apply settings to form fields
-     */
     applySettingsToForm() {
         const fields = [
             'refreshInterval', 'theme', 'useLocation',
@@ -132,12 +150,8 @@ class TransitBoardApp {
                 }
             }
         });
-
     }
 
-    /**
-     * Read settings from form fields
-     */
     readSettingsFromForm() {
         const fields = [
             'refreshInterval', 'theme', 'useLocation',
@@ -161,41 +175,27 @@ class TransitBoardApp {
         });
     }
 
-    /**
-     * Configure services with current settings
-     */
     configureServices() {
-        // Weather service
         if (this.settings.weatherApiKey) {
             weatherService.setApiKey(this.settings.weatherApiKey);
         }
 
-        // Transit service
         if (this.settings.transitApiKey) {
             transitService.configure(this.settings.transitApiKey, this.settings.transitAgency);
         }
 
-        // News service - SF Standard only
         newsService.setSource('sfstandard');
 
-        // Calendar service
         if (this.settings.googleClientId && this.settings.googleApiKey) {
             calendarService.configure(this.settings.googleClientId, this.settings.googleApiKey);
         }
     }
 
-    /**
-     * Apply theme
-     */
     applyTheme() {
         document.documentElement.setAttribute('data-theme', this.settings.theme);
     }
 
-    /**
-     * Set up event listeners
-     */
     setupEventListeners() {
-        // Settings modal
         const settingsBtn = document.getElementById('settingsBtn');
         const settingsModal = document.getElementById('settingsModal');
         const closeSettings = document.getElementById('closeSettings');
@@ -203,22 +203,16 @@ class TransitBoardApp {
         const resetSettingsBtn = document.getElementById('resetSettings');
 
         if (settingsBtn) {
-            settingsBtn.addEventListener('click', () => {
-                settingsModal.classList.add('active');
-            });
+            settingsBtn.addEventListener('click', () => settingsModal.classList.add('active'));
         }
 
         if (closeSettings) {
-            closeSettings.addEventListener('click', () => {
-                settingsModal.classList.remove('active');
-            });
+            closeSettings.addEventListener('click', () => settingsModal.classList.remove('active'));
         }
 
         if (settingsModal) {
             settingsModal.addEventListener('click', (e) => {
-                if (e.target === settingsModal) {
-                    settingsModal.classList.remove('active');
-                }
+                if (e.target === settingsModal) settingsModal.classList.remove('active');
             });
         }
 
@@ -242,19 +236,12 @@ class TransitBoardApp {
         }
 
         // Settings tabs
-        const tabBtns = document.querySelectorAll('.tab-btn');
-        tabBtns.forEach(btn => {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const tabId = btn.dataset.tab;
-
-                // Update button states
-                tabBtns.forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-
-                // Update content visibility
-                document.querySelectorAll('.tab-content').forEach(content => {
-                    content.classList.remove('active');
-                });
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 document.getElementById(`tab-${tabId}`)?.classList.add('active');
             });
         });
@@ -264,12 +251,11 @@ class TransitBoardApp {
         if (googleAuthBtn) {
             googleAuthBtn.addEventListener('click', async () => {
                 try {
-                    // Read current form values first
                     this.settings.googleClientId = document.getElementById('googleClientId')?.value;
                     this.settings.googleApiKey = document.getElementById('googleApiKey')?.value;
 
                     if (!this.settings.googleClientId || !this.settings.googleApiKey) {
-                        this.updateAuthStatus('Please enter Client ID and API Key first', 'error');
+                        this.updateAuthStatus('Enter Client ID and API Key first', 'error');
                         return;
                     }
 
@@ -287,7 +273,7 @@ class TransitBoardApp {
             });
         }
 
-        // Keyboard shortcut for settings
+        // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && settingsModal?.classList.contains('active')) {
                 settingsModal.classList.remove('active');
@@ -299,9 +285,6 @@ class TransitBoardApp {
         });
     }
 
-    /**
-     * Update Google auth status indicator
-     */
     updateAuthStatus(message, type) {
         const statusEl = document.getElementById('googleAuthStatus');
         if (statusEl) {
@@ -310,43 +293,40 @@ class TransitBoardApp {
         }
     }
 
-    /**
-     * Update clock display
-     */
+    // =============================================
+    // CLOCK - Split-flap style
+    // =============================================
+
     updateClock() {
         const clockEl = document.getElementById('clock');
         if (clockEl) {
             const now = new Date();
-            const hours = now.getHours().toString().padStart(2, '0');
-            const minutes = now.getMinutes().toString().padStart(2, '0');
-            const seconds = now.getSeconds().toString().padStart(2, '0');
-            clockEl.textContent = `${hours}:${minutes}:${seconds}`;
+            const h = now.getHours().toString().padStart(2, '0');
+            const m = now.getMinutes().toString().padStart(2, '0');
+            const s = now.getSeconds().toString().padStart(2, '0');
+            clockEl.textContent = `${h}:${m}:${s}`;
         }
     }
 
-    /**
-     * Start the refresh timer
-     */
     startRefreshTimer() {
-        if (this.refreshTimer) {
-            clearInterval(this.refreshTimer);
-        }
+        if (this.refreshTimer) clearInterval(this.refreshTimer);
         this.refreshTimer = setInterval(this.refresh, this.settings.refreshInterval * 1000);
     }
 
-    /**
-     * Refresh all data
-     */
+    // =============================================
+    // DATA REFRESH
+    // =============================================
+
     async refresh() {
         console.log('Refreshing data...');
 
-        // Update last update time
         const lastUpdateEl = document.getElementById('lastUpdate');
         if (lastUpdateEl) {
-            lastUpdateEl.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+            const now = new Date();
+            const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            lastUpdateEl.innerHTML = `<div class="flap-row small">${this.toFlaps(`UPDATED ${time}`.toUpperCase())}</div>`;
         }
 
-        // Update all sections in parallel
         await Promise.all([
             this.updateWeather().catch(e => console.error('Weather update failed:', e)),
             this.updateTransit().catch(e => console.error('Transit update failed:', e)),
@@ -357,9 +337,10 @@ class TransitBoardApp {
         console.log('Data refresh complete');
     }
 
-    /**
-     * Update weather section
-     */
+    // =============================================
+    // WEATHER SECTION
+    // =============================================
+
     async updateWeather() {
         const contentEl = document.getElementById('weatherContent');
         if (!contentEl) return;
@@ -379,87 +360,87 @@ class TransitBoardApp {
                 data = await weatherService.getWeatherByLocation(this.settings.weatherLocation, units);
             }
 
-            this.renderWeather(data);
+            this.renderWeather(contentEl, data);
         } catch (error) {
             console.error('Weather error:', error);
             this.renderWeatherError(contentEl, error.message);
         }
     }
 
-    /**
-     * Render weather data
-     */
-    renderWeather(data) {
+    renderWeather(container, data) {
         const { current, forecast } = data;
+        const unit = this.settings.tempUnit === 'celsius' ? 'C' : 'F';
+        const tempStr = `${current.temp}°${unit}`.padStart(5, ' ');
 
-        // Update temperature display with split-flap animation
-        if (this.tempDisplay) {
-            const unit = this.settings.tempUnit === 'celsius' ? 'C' : 'F';
-            this.tempDisplay.setTemperature(current.temp, unit);
-        }
-
-        // Update condition
-        const conditionEl = document.getElementById('weatherCondition');
-        if (conditionEl) {
-            conditionEl.textContent = `${current.icon} ${current.condition.toUpperCase()} • ${current.location}`;
-        }
-
-        // Update forecast
-        const forecastEl = document.getElementById('weatherForecast');
-        if (forecastEl && forecast) {
-            forecastEl.innerHTML = forecast.slice(0, 5).map(day => `
-                <div class="forecast-item">
-                    <span class="forecast-day">${day.day}</span>
-                    <span class="forecast-icon">${day.icon}</span>
-                    <span class="forecast-temp">
-                        ${day.high}° <span class="forecast-temp-low">${day.low}°</span>
-                    </span>
+        let html = `
+            <div class="weather-main">
+                <span class="weather-icon">${current.icon}</span>
+                <div class="weather-temp-display">
+                    <div class="flap-row large">${this.toFlaps(tempStr)}</div>
                 </div>
-            `).join('');
+            </div>
+            <div class="weather-condition">
+                ${this.flapRow(current.condition, 'small', 20)}
+            </div>
+        `;
+
+        if (forecast && forecast.length > 0) {
+            html += `<div class="weather-forecast">`;
+            forecast.slice(0, 5).forEach(day => {
+                const highLow = `${day.high}/${day.low}`;
+                html += `
+                    <div class="forecast-day">
+                        ${this.flapRow(day.day, 'small', 3)}
+                        <span class="forecast-icon">${day.icon}</span>
+                        ${this.flapRow(highLow, 'small', 7)}
+                    </div>
+                `;
+            });
+            html += `</div>`;
         }
+
+        container.innerHTML = html;
     }
 
-    /**
-     * Render weather placeholder
-     */
     renderWeatherPlaceholder(container) {
         container.innerHTML = `
-            <div class="no-data">
-                <p>Weather API not configured</p>
-                <p><small>Add your OpenWeatherMap API key in Settings</small></p>
+            <div class="weather-main">
+                ${this.flapRow('--°F', 'large')}
+            </div>
+            <div class="weather-condition">
+                ${this.flapRow('ADD API KEY IN SETTINGS', 'small')}
             </div>
         `;
     }
 
-    /**
-     * Render weather error
-     */
     renderWeatherError(container, message) {
         container.innerHTML = `
-            <div class="error-message">
-                <p>Failed to load weather</p>
-                <p><small>${message}</small></p>
+            <div class="weather-main">
+                ${this.flapRow('ERR', 'large')}
+            </div>
+            <div class="weather-condition">
+                ${this.flapRow(message.substring(0, 25).toUpperCase(), 'small')}
             </div>
         `;
     }
 
-    /**
-     * Update transit section
-     */
+    // =============================================
+    // TRANSIT SECTION
+    // =============================================
+
     async updateTransit() {
         const contentEl = document.getElementById('transitContent');
         const listEl = document.getElementById('transitList');
         if (!contentEl || !listEl) return;
 
         if (!transitService.isConfigured()) {
-            this.renderTransitPlaceholder(contentEl);
+            this.renderTransitPlaceholder(listEl);
             return;
         }
 
         try {
             let departures;
 
-            // Check for favorite stops first
             if (this.settings.favoriteStops) {
                 const stopIds = this.settings.favoriteStops.split(',').map(s => s.trim()).filter(Boolean);
                 if (stopIds.length > 0) {
@@ -467,7 +448,6 @@ class TransitBoardApp {
                 }
             }
 
-            // If no favorites, use location
             if (!departures && this.settings.useLocation) {
                 departures = await transitService.getDeparturesByCurrentLocation(this.settings.maxStops);
             }
@@ -475,69 +455,66 @@ class TransitBoardApp {
             this.renderTransit(listEl, departures || []);
         } catch (error) {
             console.error('Transit error:', error);
-            this.renderTransitError(contentEl, error.message);
+            this.renderTransitError(listEl, error.message);
         }
     }
 
-    /**
-     * Render transit departures
-     */
     renderTransit(container, departures) {
         if (departures.length === 0) {
             container.innerHTML = `
-                <div class="no-data">
-                    <p>No upcoming departures found</p>
+                <div class="transit-row">
+                    ${this.flapRow('NO DEPARTURES FOUND', 'small')}
                 </div>
             `;
             return;
         }
 
-        container.innerHTML = departures.slice(0, 8).map(dep => {
-            const timeClass = dep.minutesAway === 0 ? 'transit-time arriving' : 'transit-time';
-            const timeText = TransitService.formatMinutes(dep.minutesAway);
+        container.innerHTML = departures.slice(0, 6).map(dep => {
+            const line = dep.line.toString().padEnd(3, ' ').substring(0, 3);
+            const dest = (dep.destination || '').substring(0, 18).padEnd(18, ' ');
+            const mins = dep.minutesAway;
+            const timeStr = mins === 0 ? 'NOW' : `${mins}M`.padStart(4, ' ');
+            const timeFlaps = mins === 0 ? this.successFlaps(timeStr) : this.toFlaps(timeStr);
 
             return `
-                <div class="transit-row" style="border-left-color: ${dep.color}">
-                    <div class="transit-line" style="background: ${dep.color}">${dep.line}</div>
-                    <div class="transit-info">
-                        <div class="transit-destination">${dep.destination}</div>
-                        <div class="transit-stop-name">${dep.stopName || ''}</div>
+                <div class="transit-row">
+                    <div class="transit-line-display">
+                        <div class="flap-row small">${this.accentFlaps(line)}</div>
                     </div>
-                    <div class="transit-times">
-                        <span class="${timeClass}">${timeText}</span>
+                    <div class="transit-destination-display">
+                        <div class="flap-row small">${this.toFlaps(dest.toUpperCase())}</div>
+                    </div>
+                    <div class="transit-time-display">
+                        <div class="flap-row small">${timeFlaps}</div>
                     </div>
                 </div>
             `;
         }).join('');
     }
 
-    /**
-     * Render transit placeholder
-     */
     renderTransitPlaceholder(container) {
         container.innerHTML = `
-            <div class="no-data">
-                <p>Transit API not configured</p>
-                <p><small>Add your 511.org API key in Settings</small></p>
+            <div class="transit-row">
+                ${this.flapRow('ADD 511.ORG API KEY', 'small')}
+            </div>
+            <div class="transit-row">
+                ${this.flapRow('IN SETTINGS', 'small')}
             </div>
         `;
     }
 
-    /**
-     * Render transit error
-     */
     renderTransitError(container, message) {
         container.innerHTML = `
-            <div class="error-message">
-                <p>Failed to load transit data</p>
-                <p><small>${message}</small></p>
+            <div class="transit-row">
+                ${this.flapRow('ERROR LOADING DATA', 'small')}
             </div>
         `;
     }
 
-    /**
-     * Update news section
-     */
+    // =============================================
+    // NEWS SECTION
+    // =============================================
+
     async updateNews() {
         const tickerEl = document.getElementById('newsTicker');
         if (!tickerEl) return;
@@ -551,59 +528,61 @@ class TransitBoardApp {
         }
     }
 
-    /**
-     * Render news items
-     */
     renderNews(container, news) {
         if (news.length === 0) {
             container.innerHTML = `
-                <div class="no-data">
-                    <p>No news available</p>
+                <div class="news-item">
+                    ${this.flapRow('NO NEWS AVAILABLE', 'small')}
                 </div>
             `;
             return;
         }
 
-        container.innerHTML = news.map(item => `
-            <div class="news-item" onclick="window.open('${item.link}', '_blank')">
-                <div class="news-time">${NewsService.formatRelativeTime(item.pubDate)}</div>
-                <div>
-                    <div class="news-headline">${this.escapeHtml(item.title)}</div>
-                    <div class="news-source">${item.source}</div>
+        container.innerHTML = news.slice(0, 5).map(item => {
+            const time = NewsService.formatRelativeTime(item.pubDate).toUpperCase();
+            const title = item.title.toUpperCase().substring(0, 45);
+            // Split long titles into multiple lines
+            const lines = [];
+            for (let i = 0; i < title.length; i += 30) {
+                lines.push(title.substring(i, i + 30).padEnd(30, ' '));
+            }
+
+            return `
+                <div class="news-item" onclick="window.open('${item.link}', '_blank')">
+                    <div class="news-time-display">
+                        <div class="flap-row small">${this.accentFlaps(time.padEnd(8, ' ').substring(0, 8))}</div>
+                    </div>
+                    <div class="news-headline-display">
+                        ${lines.map(line => `<div class="flap-row small">${this.toFlaps(line)}</div>`).join('')}
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
-    /**
-     * Render news error
-     */
     renderNewsError(container, message) {
         container.innerHTML = `
-            <div class="error-message">
-                <p>Failed to load news</p>
-                <p><small>${message}</small></p>
+            <div class="news-item">
+                ${this.flapRow('NEWS UNAVAILABLE', 'small')}
             </div>
         `;
     }
 
-    /**
-     * Update calendar section
-     */
+    // =============================================
+    // CALENDAR SECTION
+    // =============================================
+
     async updateCalendar() {
         const listEl = document.getElementById('calendarList');
         if (!listEl) return;
 
-        // Check if calendar is configured
         if (!calendarService.isConfigured()) {
             this.renderCalendarPlaceholder(listEl);
             return;
         }
 
-        // Try to restore session
         calendarService.restoreSession();
 
-        // Check if authenticated
         if (!calendarService.isAuthenticated()) {
             this.renderCalendarNotAuthenticated(listEl);
             return;
@@ -614,8 +593,6 @@ class TransitBoardApp {
             this.renderCalendar(listEl, events);
         } catch (error) {
             console.error('Calendar error:', error);
-
-            // If not authenticated, show auth prompt
             if (error.message.includes('Not authenticated')) {
                 this.renderCalendarNotAuthenticated(listEl);
             } else {
@@ -624,78 +601,74 @@ class TransitBoardApp {
         }
     }
 
-    /**
-     * Render calendar events
-     */
     renderCalendar(container, events) {
         if (events.length === 0) {
             container.innerHTML = `
-                <div class="no-data">
-                    <p>No upcoming events</p>
+                <div class="calendar-event">
+                    ${this.flapRow('NO UPCOMING EVENTS', 'small')}
                 </div>
             `;
             return;
         }
 
-        container.innerHTML = events.map(event => {
+        container.innerHTML = events.slice(0, 5).map(event => {
+            const dateStr = CalendarService.formatEventDate(event).toUpperCase().substring(0, 8);
+            const timeStr = CalendarService.formatEventTime(event).toUpperCase().substring(0, 8);
+            const title = event.title.toUpperCase().substring(0, 22).padEnd(22, ' ');
+
             let eventClass = 'calendar-event';
             if (event.isNow) eventClass += ' now';
             else if (event.isToday) eventClass += ' today';
 
             return `
                 <div class="${eventClass}">
-                    <div class="event-time">
-                        <span class="event-date">${CalendarService.formatEventDate(event)}</span>
-                        <span class="event-hour">${CalendarService.formatEventTime(event)}</span>
+                    <div class="event-time-display">
+                        <div class="flap-row small">${this.toFlaps(dateStr.padEnd(8, ' '))}</div>
+                        <div class="flap-row small">${this.accentFlaps(timeStr.padEnd(8, ' '))}</div>
                     </div>
-                    <div class="event-details">
-                        <div class="event-title">${this.escapeHtml(event.title)}</div>
-                        ${event.location ? `<div class="event-location">📍 ${this.escapeHtml(event.location)}</div>` : ''}
+                    <div class="event-details-display">
+                        <div class="flap-row small">${this.toFlaps(title)}</div>
+                        ${event.location ? `<div class="flap-row small">${this.toFlaps(event.location.toUpperCase().substring(0, 22).padEnd(22, ' '))}</div>` : ''}
                     </div>
                 </div>
             `;
         }).join('');
     }
 
-    /**
-     * Render calendar placeholder
-     */
     renderCalendarPlaceholder(container) {
         container.innerHTML = `
-            <div class="no-data">
-                <p>Calendar not configured</p>
-                <p><small>Add your Google API credentials in Settings</small></p>
+            <div class="calendar-event">
+                ${this.flapRow('ADD GOOGLE CREDENTIALS', 'small')}
+            </div>
+            <div class="calendar-event">
+                ${this.flapRow('IN SETTINGS', 'small')}
             </div>
         `;
     }
 
-    /**
-     * Render calendar not authenticated
-     */
     renderCalendarNotAuthenticated(container) {
         container.innerHTML = `
-            <div class="no-data">
-                <p>Calendar not connected</p>
-                <p><small>Click "Connect Google Calendar" in Settings</small></p>
+            <div class="calendar-event">
+                ${this.flapRow('CALENDAR NOT CONNECTED', 'small')}
+            </div>
+            <div class="calendar-event">
+                ${this.flapRow('CLICK CONNECT IN SETTINGS', 'small')}
             </div>
         `;
     }
 
-    /**
-     * Render calendar error
-     */
     renderCalendarError(container, message) {
         container.innerHTML = `
-            <div class="error-message">
-                <p>Failed to load calendar</p>
-                <p><small>${message}</small></p>
+            <div class="calendar-event">
+                ${this.flapRow('CALENDAR ERROR', 'small')}
             </div>
         `;
     }
 
-    /**
-     * Escape HTML to prevent XSS
-     */
+    // =============================================
+    // UTILITIES
+    // =============================================
+
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
