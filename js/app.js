@@ -150,6 +150,33 @@ class TransitBoardApp {
         return this.TRANSIT_ROW_WIDTH - this.TRANSIT_LINE_WIDTH - this.TRANSIT_TIME_WIDTH - 2; // -2 for spacing
     }
 
+    get WEATHER_ROW_WIDTH() {
+        return 40; // Same as transit for consistency
+    }
+
+    /**
+     * Get wind description with emoji based on speed (mph)
+     */
+    getWindDescription(speed) {
+        if (speed < 5) return { text: 'CALM', emoji: '🍃' };
+        if (speed < 12) return { text: 'LIGHT', emoji: '🍃' };
+        if (speed < 20) return { text: 'BREEZY', emoji: '💨' };
+        if (speed < 30) return { text: 'WINDY', emoji: '💨' };
+        if (speed < 40) return { text: 'VERY WINDY', emoji: '🌬️' };
+        return { text: 'DANGEROUS', emoji: '🌪️' };
+    }
+
+    /**
+     * Get UV index description
+     */
+    getUVDescription(uvIndex) {
+        if (uvIndex <= 2) return { text: 'LOW', emoji: '😎' };
+        if (uvIndex <= 5) return { text: 'MODERATE', emoji: '🧴' };
+        if (uvIndex <= 7) return { text: 'HIGH', emoji: '⚠️' };
+        if (uvIndex <= 10) return { text: 'VERY HIGH', emoji: '🔥' };
+        return { text: 'EXTREME', emoji: '☠️' };
+    }
+
     // =============================================
     // INITIALIZATION
     // =============================================
@@ -429,32 +456,46 @@ class TransitBoardApp {
     renderWeather(container, data) {
         const { current, forecast } = data;
         const unit = this.settings.tempUnit === 'celsius' ? 'C' : 'F';
-        const tempStr = `${current.temp}°${unit}`;
+        const W = this.WEATHER_ROW_WIDTH;
+
+        // Row 1: Current temp + feels like + condition icon
+        const currentRow = `${current.icon} ${current.temp}° FEELS ${current.feelsLike}°`.padEnd(W, ' ');
+
+        // Row 2: Today's high/low from forecast
+        const todayForecast = forecast && forecast.length > 0 ? forecast[0] : null;
+        const highLowRow = todayForecast
+            ? `TODAY ${todayForecast.high}°/${todayForecast.low}° ${todayForecast.icon}`.padEnd(W, ' ')
+            : 'TODAY --/--'.padEnd(W, ' ');
+
+        // Row 3: Precipitation chance
+        const precipEmoji = current.precipitationProbability > 50 ? '🌧️' : current.precipitationProbability > 20 ? '🌦️' : '☀️';
+        const precipRow = `PRECIP ${current.precipitationProbability}% ${precipEmoji}`.padEnd(W, ' ');
+
+        // Row 4: Wind
+        const wind = this.getWindDescription(current.windSpeed);
+        const windRow = `${wind.text} ${current.windSpeed}MPH ${wind.emoji}`.padEnd(W, ' ');
+
+        // Row 5: UV Index
+        const uv = this.getUVDescription(current.uvIndex);
+        const uvRow = `UV ${current.uvIndex} ${uv.text} ${uv.emoji}`.padEnd(W, ' ');
 
         let html = `
-            <div class="weather-main">
-                <span class="weather-icon">${current.icon}</span>
-                <div class="weather-temp-display">
-                    <div class="flap-row large">${this.colorFlaps(tempStr, 'color-orange')}</div>
-                </div>
-            </div>
-            <div class="weather-condition">
-                <div class="flap-row small">${this.toFlaps(current.condition.toUpperCase().substring(0, 20))}</div>
+            <div class="weather-rows">
+                <div class="flap-row small">${this.colorFlaps(currentRow, 'color-orange')}</div>
+                <div class="flap-row small">${this.colorFlaps(highLowRow, 'color-yellow')}</div>
+                <div class="flap-row small">${this.colorFlaps(precipRow, 'color-blue')}</div>
+                <div class="flap-row small">${this.colorFlaps(windRow, 'color-teal')}</div>
+                <div class="flap-row small">${this.colorFlaps(uvRow, 'color-pink')}</div>
             </div>
         `;
 
-        if (forecast && forecast.length > 0) {
-            html += `<div class="weather-forecast">`;
-            forecast.slice(0, 5).forEach((day, idx) => {
-                const highLow = `${day.high}/${day.low}`;
-                const color = this.getRowColor(idx);
-                html += `
-                    <div class="forecast-day">
-                        <div class="flap-row small">${this.colorFlaps(day.day.toUpperCase().padEnd(3, ' ').substring(0, 3), color)}</div>
-                        <span class="forecast-icon">${day.icon}</span>
-                        <div class="flap-row small">${this.colorFlaps(highLow.padEnd(7, ' '), color)}</div>
-                    </div>
-                `;
+        // Forecast rows (remaining days)
+        if (forecast && forecast.length > 1) {
+            html += `<div class="weather-forecast-rows">`;
+            forecast.slice(1, 4).forEach((day, idx) => {
+                const forecastRow = `${day.day.toUpperCase().substring(0, 3)} ${day.high}°/${day.low}° ${day.icon}`.padEnd(W, ' ');
+                const color = this.getRowColor(idx + 2);
+                html += `<div class="flap-row small">${this.colorFlaps(forecastRow, color)}</div>`;
             });
             html += `</div>`;
         }
@@ -465,23 +506,22 @@ class TransitBoardApp {
     }
 
     renderWeatherPlaceholder(container) {
+        const W = this.WEATHER_ROW_WIDTH;
         container.innerHTML = `
-            <div class="weather-main">
-                ${this.flapRow('--°F', 'large')}
-            </div>
-            <div class="weather-condition">
-                ${this.flapRow('ADD API KEY IN SETTINGS', 'small')}
+            <div class="weather-rows">
+                <div class="flap-row small">${this.toFlaps('WEATHER'.padEnd(W, ' '))}</div>
+                <div class="flap-row small">${this.toFlaps('ADD API KEY IN SETTINGS'.padEnd(W, ' '))}</div>
+                <div class="flap-row small">${this.toFlaps(''.padEnd(W, ' '))}</div>
             </div>
         `;
     }
 
     renderWeatherError(container, message) {
+        const W = this.WEATHER_ROW_WIDTH;
         container.innerHTML = `
-            <div class="weather-main">
-                ${this.flapRow('ERR', 'large')}
-            </div>
-            <div class="weather-condition">
-                ${this.flapRow(message.substring(0, 25).toUpperCase(), 'small')}
+            <div class="weather-rows">
+                <div class="flap-row small">${this.colorFlaps('WEATHER ERROR'.padEnd(W, ' '), 'color-red')}</div>
+                <div class="flap-row small">${this.toFlaps(message.substring(0, W).toUpperCase().padEnd(W, ' '))}</div>
             </div>
         `;
     }

@@ -379,52 +379,31 @@ body {
 .weather-section .section-content {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 2px;
+    overflow-y: auto;
 }
 
-.weather-main {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 4px;
-}
-
-.weather-icon {
-    font-size: 28px;
-}
-
-.weather-temp-display {
-    display: flex;
-}
-
-.weather-condition {
-    display: flex;
-    justify-content: center;
-}
-
-.weather-forecast {
-    display: flex;
-    gap: 4px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.forecast-day {
+.weather-rows {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 4px;
-    background: transparent;
+    gap: 2px;
 }
 
-.forecast-day .flap-row {
-    font-size: 9px;
+.weather-rows .flap-row {
+    padding: 2px 0;
 }
 
-.forecast-icon {
-    font-size: 16px;
-    margin: 2px 0;
+.weather-forecast-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid #222;
+}
+
+.weather-forecast-rows .flap-row {
+    padding: 2px 0;
 }
 
 /* =============================================

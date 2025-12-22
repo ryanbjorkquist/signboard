@@ -9,7 +9,7 @@ class WeatherService {
         this.baseUrl = 'https://api.tomorrow.io/v4';
         this.cache = null;
         this.cacheTime = 0;
-        this.cacheDuration = 10 * 60 * 1000; // 10 minutes
+        this.cacheDuration = 4 * 60 * 1000; // 4 minutes (max 15 calls/hr, well under 20/hr limit)
     }
 
     /**
@@ -123,7 +123,8 @@ class WeatherService {
             windSpeed: Math.round(values.windSpeed),
             windDirection: values.windDirection,
             visibility: values.visibility,
-            uvIndex: values.uvIndex,
+            uvIndex: Math.round(values.uvIndex || 0),
+            precipitationProbability: Math.round(values.precipitationProbability || 0),
             location: `${lat.toFixed(2)}, ${lon.toFixed(2)}`
         };
     }
@@ -235,7 +236,8 @@ class WeatherService {
             windSpeed: Math.round(values.windSpeed),
             windDirection: values.windDirection,
             visibility: values.visibility,
-            uvIndex: values.uvIndex,
+            uvIndex: Math.round(values.uvIndex || 0),
+            precipitationProbability: Math.round(values.precipitationProbability || 0),
             location: resolvedLocation?.name || location
         };
 
