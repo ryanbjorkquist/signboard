@@ -688,12 +688,17 @@ class TransitBoardApp {
             return;
         }
 
+        // Debug: log events to see what we're getting
+        console.log('Calendar events to render:', events);
+
         // Show up to 10 events since calendar has full right side
         container.innerHTML = events.slice(0, 10).map((event, idx) => {
             const dateStr = CalendarService.formatEventDate(event).toUpperCase().substring(0, 10);
             const timeStr = CalendarService.formatEventTime(event).toUpperCase().substring(0, 8);
             const title = event.title.toUpperCase().substring(0, 28).padEnd(28, ' ');
-            const rowColor = this.getRowColor(idx);
+
+            // Use the event's Google Calendar color, fallback to cycling colors
+            const eventColor = event.colorClass || this.getRowColor(idx);
 
             let eventClass = 'calendar-event';
             if (event.isNow) eventClass += ' now';
@@ -702,11 +707,11 @@ class TransitBoardApp {
             return `
                 <div class="${eventClass}">
                     <div class="event-time-display">
-                        <div class="flap-row small">${this.colorFlaps(dateStr.padEnd(10, ' '), rowColor)}</div>
+                        <div class="flap-row small">${this.colorFlaps(dateStr.padEnd(10, ' '), eventColor)}</div>
                         <div class="flap-row small">${this.timeFlaps(timeStr.padEnd(8, ' '))}</div>
                     </div>
                     <div class="event-details-display">
-                        <div class="flap-row small">${this.colorFlaps(title, rowColor)}</div>
+                        <div class="flap-row small">${this.colorFlaps(title, eventColor)}</div>
                     </div>
                 </div>
             `;

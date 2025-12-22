@@ -10,6 +10,23 @@ class CalendarService {
         this.cache = null;
         this.cacheTime = 0;
         this.cacheDuration = 5 * 60 * 1000; // 5 minutes
+
+        // Google Calendar color ID mapping to hex colors
+        // These are the standard Google Calendar event colors
+        this.colorMap = {
+            '1': { name: 'Lavender', hex: '#7986cb', flapClass: 'color-blue' },
+            '2': { name: 'Sage', hex: '#33b679', flapClass: 'color-green' },
+            '3': { name: 'Grape', hex: '#8e24aa', flapClass: 'color-pink' },
+            '4': { name: 'Flamingo', hex: '#e67c73', flapClass: 'color-red' },
+            '5': { name: 'Banana', hex: '#f6c026', flapClass: 'color-yellow' },
+            '6': { name: 'Tangerine', hex: '#f5511d', flapClass: 'color-orange' },
+            '7': { name: 'Peacock', hex: '#039be5', flapClass: 'color-teal' },
+            '8': { name: 'Graphite', hex: '#616161', flapClass: 'color-default' },
+            '9': { name: 'Blueberry', hex: '#3f51b5', flapClass: 'color-blue' },
+            '10': { name: 'Basil', hex: '#0b8043', flapClass: 'color-green' },
+            '11': { name: 'Tomato', hex: '#d60000', flapClass: 'color-red' },
+            'default': { name: 'Default', hex: '#4285f4', flapClass: 'color-blue' }
+        };
     }
 
     /**
@@ -83,6 +100,9 @@ class CalendarService {
      * Format a calendar event
      */
     formatEvent(event) {
+        // Debug: log raw event to see what we're getting
+        console.log('Raw calendar event:', event);
+
         const start = event.start.dateTime
             ? new Date(event.start.dateTime)
             : new Date(event.start.date);
@@ -100,9 +120,16 @@ class CalendarService {
         // Check if event is today
         const isToday = start.toDateString() === now.toDateString();
 
+        // Get title - try summary first, then other fields
+        const title = event.summary || event.title || event.subject || '(No title)';
+
+        // Get color - colorId maps to Google's color scheme
+        const colorId = event.colorId || 'default';
+        const colorInfo = this.colorMap[colorId] || this.colorMap['default'];
+
         return {
             id: event.id,
-            title: event.summary || '(No title)',
+            title: title,
             description: event.description || '',
             location: event.location || '',
             start: start,
@@ -110,9 +137,20 @@ class CalendarService {
             isAllDay: isAllDay,
             isNow: isNow,
             isToday: isToday,
-            color: event.colorId || 'default',
+            colorId: colorId,
+            colorHex: colorInfo.hex,
+            colorClass: colorInfo.flapClass,
+            colorName: colorInfo.name,
             link: event.htmlLink
         };
+    }
+
+    /**
+     * Get flap color class for a color ID
+     */
+    getColorClass(colorId) {
+        const colorInfo = this.colorMap[colorId] || this.colorMap['default'];
+        return colorInfo.flapClass;
     }
 
     /**
