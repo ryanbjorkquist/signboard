@@ -1,13 +1,12 @@
 /**
  * Weather Service
- * Fetches current weather and forecast from OpenWeatherMap API
+ * Fetches current weather and forecast from Tomorrow.io API
  */
 
 class WeatherService {
     constructor() {
         this.apiKey = null;
-        this.baseUrl = 'https://api.openweathermap.org/data/2.5';
-        this.geoUrl = 'https://api.openweathermap.org/geo/1.0';
+        this.baseUrl = 'https://api.tomorrow.io/v4';
         this.cache = null;
         this.cacheTime = 0;
         this.cacheDuration = 10 * 60 * 1000; // 10 minutes
@@ -29,51 +28,68 @@ class WeatherService {
     }
 
     /**
-     * Get weather icon emoji from OpenWeatherMap icon code
+     * Get weather icon emoji from Tomorrow.io weather code
      */
-    getWeatherEmoji(iconCode) {
+    getWeatherEmoji(weatherCode) {
+        // Tomorrow.io weather codes: https://docs.tomorrow.io/reference/data-layers-weather-codes
         const iconMap = {
-            '01d': '☀️', '01n': '🌙',
-            '02d': '⛅', '02n': '☁️',
-            '03d': '☁️', '03n': '☁️',
-            '04d': '☁️', '04n': '☁️',
-            '09d': '🌧️', '09n': '🌧️',
-            '10d': '🌦️', '10n': '🌧️',
-            '11d': '⛈️', '11n': '⛈️',
-            '13d': '❄️', '13n': '❄️',
-            '50d': '🌫️', '50n': '🌫️'
+            1000: '☀️',  // Clear, Sunny
+            1100: '🌤️',  // Mostly Clear
+            1101: '⛅',  // Partly Cloudy
+            1102: '🌥️',  // Mostly Cloudy
+            1001: '☁️',  // Cloudy
+            2000: '🌫️',  // Fog
+            2100: '🌫️',  // Light Fog
+            4000: '🌧️',  // Drizzle
+            4001: '🌧️',  // Rain
+            4200: '🌧️',  // Light Rain
+            4201: '🌧️',  // Heavy Rain
+            5000: '🌨️',  // Snow
+            5001: '🌨️',  // Flurries
+            5100: '🌨️',  // Light Snow
+            5101: '❄️',  // Heavy Snow
+            6000: '🌧️',  // Freezing Drizzle
+            6001: '🌧️',  // Freezing Rain
+            6200: '🌧️',  // Light Freezing Rain
+            6201: '🌧️',  // Heavy Freezing Rain
+            7000: '🌨️',  // Ice Pellets
+            7101: '🌨️',  // Heavy Ice Pellets
+            7102: '🌨️',  // Light Ice Pellets
+            8000: '⛈️',  // Thunderstorm
         };
-        return iconMap[iconCode] || '🌡️';
+        return iconMap[weatherCode] || '🌡️';
     }
 
     /**
-     * Get coordinates from location name
+     * Get condition name from Tomorrow.io weather code
      */
-    async geocode(location) {
-        if (!this.apiKey) {
-            throw new Error('Weather API key not configured');
-        }
-
-        const response = await fetch(
-            `${this.geoUrl}/direct?q=${encodeURIComponent(location)}&limit=1&appid=${this.apiKey}`
-        );
-
-        if (!response.ok) {
-            throw new Error('Failed to geocode location');
-        }
-
-        const data = await response.json();
-        if (data.length === 0) {
-            throw new Error('Location not found');
-        }
-
-        return {
-            lat: data[0].lat,
-            lon: data[0].lon,
-            name: data[0].name,
-            state: data[0].state,
-            country: data[0].country
+    getConditionName(weatherCode) {
+        const conditions = {
+            1000: 'Clear',
+            1100: 'Mostly Clear',
+            1101: 'Partly Cloudy',
+            1102: 'Mostly Cloudy',
+            1001: 'Cloudy',
+            2000: 'Fog',
+            2100: 'Light Fog',
+            4000: 'Drizzle',
+            4001: 'Rain',
+            4200: 'Light Rain',
+            4201: 'Heavy Rain',
+            5000: 'Snow',
+            5001: 'Flurries',
+            5100: 'Light Snow',
+            5101: 'Heavy Snow',
+            6000: 'Freezing Drizzle',
+            6001: 'Freezing Rain',
+            6200: 'Light Freezing Rain',
+            6201: 'Heavy Freezing Rain',
+            7000: 'Ice Pellets',
+            7101: 'Heavy Ice Pellets',
+            7102: 'Light Ice Pellets',
+            8000: 'Thunderstorm',
         };
+        return conditions[weatherCode] || 'Unknown';
     }
 
     /**
@@ -84,88 +100,66 @@ class WeatherService {
             throw new Error('Weather API key not configured');
         }
 
-        const response = await fetch(
-            `${this.baseUrl}/weather?lat=${lat}&lon=${lon}&units=${units}&appid=${this.apiKey}`
-        );
+        const unitSystem = units === 'metric' ? 'metric' : 'imperial';
+        const url = `${this.baseUrl}/weather/realtime?location=${lat},${lon}&units=${unitSystem}&apikey=${this.apiKey}`;
+
+        const response = await fetch(url);
 
         if (!response.ok) {
-            throw new Error('Failed to fetch weather data');
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Failed to fetch weather data');
         }
 
         const data = await response.json();
+        const values = data.data.values;
 
         return {
-            temp: Math.round(data.main.temp),
-            feelsLike: Math.round(data.main.feels_like),
-            humidity: data.main.humidity,
-            condition: data.weather[0].main,
-            description: data.weather[0].description,
-            icon: this.getWeatherEmoji(data.weather[0].icon),
-            windSpeed: Math.round(data.wind.speed),
-            windDirection: data.wind.deg,
-            visibility: data.visibility,
-            sunrise: new Date(data.sys.sunrise * 1000),
-            sunset: new Date(data.sys.sunset * 1000),
-            location: data.name
+            temp: Math.round(values.temperature),
+            feelsLike: Math.round(values.temperatureApparent),
+            humidity: Math.round(values.humidity),
+            condition: this.getConditionName(values.weatherCode),
+            description: this.getConditionName(values.weatherCode),
+            icon: this.getWeatherEmoji(values.weatherCode),
+            windSpeed: Math.round(values.windSpeed),
+            windDirection: values.windDirection,
+            visibility: values.visibility,
+            uvIndex: values.uvIndex,
+            location: `${lat.toFixed(2)}, ${lon.toFixed(2)}`
         };
     }
 
     /**
-     * Get 5-day forecast by coordinates
+     * Get forecast by coordinates
      */
     async getForecast(lat, lon, units = 'imperial') {
         if (!this.apiKey) {
             throw new Error('Weather API key not configured');
         }
 
-        const response = await fetch(
-            `${this.baseUrl}/forecast?lat=${lat}&lon=${lon}&units=${units}&appid=${this.apiKey}`
-        );
+        const unitSystem = units === 'metric' ? 'metric' : 'imperial';
+        const url = `${this.baseUrl}/weather/forecast?location=${lat},${lon}&units=${unitSystem}&timesteps=1d&apikey=${this.apiKey}`;
+
+        const response = await fetch(url);
 
         if (!response.ok) {
-            throw new Error('Failed to fetch forecast data');
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Failed to fetch forecast data');
         }
 
         const data = await response.json();
+        const dailyTimelines = data.timelines?.daily || [];
 
-        // Group by day and get daily highs/lows
-        const dailyData = {};
-        data.list.forEach(item => {
-            const date = new Date(item.dt * 1000);
-            const dayKey = date.toDateString();
-
-            if (!dailyData[dayKey]) {
-                dailyData[dayKey] = {
-                    date: date,
-                    day: date.toLocaleDateString('en-US', { weekday: 'short' }),
-                    temps: [],
-                    icons: [],
-                    conditions: []
-                };
-            }
-
-            dailyData[dayKey].temps.push(item.main.temp);
-            dailyData[dayKey].icons.push(item.weather[0].icon);
-            dailyData[dayKey].conditions.push(item.weather[0].main);
-        });
-
-        // Process into forecast array
-        const forecast = Object.values(dailyData).slice(0, 5).map(day => {
-            // Get most common condition/icon for the day
-            const iconCounts = {};
-            day.icons.forEach(icon => {
-                iconCounts[icon] = (iconCounts[icon] || 0) + 1;
-            });
-            const mostCommonIcon = Object.entries(iconCounts)
-                .sort((a, b) => b[1] - a[1])[0][0];
+        const forecast = dailyTimelines.slice(0, 5).map(day => {
+            const date = new Date(day.time);
+            const values = day.values;
 
             return {
-                day: day.day,
-                date: day.date,
-                high: Math.round(Math.max(...day.temps)),
-                low: Math.round(Math.min(...day.temps)),
-                icon: this.getWeatherEmoji(mostCommonIcon),
-                condition: day.conditions[0]
+                day: date.toLocaleDateString('en-US', { weekday: 'short' }),
+                date: date,
+                high: Math.round(values.temperatureMax),
+                low: Math.round(values.temperatureMin),
+                icon: this.getWeatherEmoji(values.weatherCodeMax || values.weatherCodeMin),
+                condition: this.getConditionName(values.weatherCodeMax || values.weatherCodeMin)
             };
         });
 
@@ -197,11 +191,76 @@ class WeatherService {
     }
 
     /**
-     * Get weather by location name
+     * Get weather by location name using geocoding
      */
     async getWeatherByLocation(location, units = 'imperial') {
-        const coords = await this.geocode(location);
-        return this.getWeatherData(coords.lat, coords.lon, units);
+        if (!this.apiKey) {
+            throw new Error('Weather API key not configured');
+        }
+
+        // Use Tomorrow.io's location parameter which accepts place names
+        const unitSystem = units === 'metric' ? 'metric' : 'imperial';
+
+        // First get realtime to find the resolved location
+        const realtimeUrl = `${this.baseUrl}/weather/realtime?location=${encodeURIComponent(location)}&units=${unitSystem}&apikey=${this.apiKey}`;
+        const realtimeResponse = await fetch(realtimeUrl);
+
+        if (!realtimeResponse.ok) {
+            const errorData = await realtimeResponse.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Failed to fetch weather data');
+        }
+
+        const realtimeData = await realtimeResponse.json();
+        const resolvedLocation = realtimeData.location;
+
+        // Now get forecast for the same location
+        const forecastUrl = `${this.baseUrl}/weather/forecast?location=${encodeURIComponent(location)}&units=${unitSystem}&timesteps=1d&apikey=${this.apiKey}`;
+        const forecastResponse = await fetch(forecastUrl);
+
+        if (!forecastResponse.ok) {
+            const errorData = await forecastResponse.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Failed to fetch forecast data');
+        }
+
+        const forecastData = await forecastResponse.json();
+
+        const values = realtimeData.data.values;
+        const current = {
+            temp: Math.round(values.temperature),
+            feelsLike: Math.round(values.temperatureApparent),
+            humidity: Math.round(values.humidity),
+            condition: this.getConditionName(values.weatherCode),
+            description: this.getConditionName(values.weatherCode),
+            icon: this.getWeatherEmoji(values.weatherCode),
+            windSpeed: Math.round(values.windSpeed),
+            windDirection: values.windDirection,
+            visibility: values.visibility,
+            uvIndex: values.uvIndex,
+            location: resolvedLocation?.name || location
+        };
+
+        const dailyTimelines = forecastData.timelines?.daily || [];
+        const forecast = dailyTimelines.slice(0, 5).map(day => {
+            const date = new Date(day.time);
+            const dayValues = day.values;
+
+            return {
+                day: date.toLocaleDateString('en-US', { weekday: 'short' }),
+                date: date,
+                high: Math.round(dayValues.temperatureMax),
+                low: Math.round(dayValues.temperatureMin),
+                icon: this.getWeatherEmoji(dayValues.weatherCodeMax || dayValues.weatherCodeMin),
+                condition: this.getConditionName(dayValues.weatherCodeMax || dayValues.weatherCodeMin)
+            };
+        });
+
+        const data = { current, forecast };
+
+        // Update cache
+        this.cache = data;
+        this.cacheTime = Date.now();
+
+        return data;
     }
 
     /**

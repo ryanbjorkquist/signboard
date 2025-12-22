@@ -1,15 +1,23 @@
 /**
  * News Service
- * Fetches news from RSS feeds using a CORS proxy
+ * Fetches news from RSS feeds using CORS proxies
  */
 
 class NewsService {
     constructor() {
-        // Use a public CORS proxy for RSS feeds
-        this.corsProxy = 'https://api.allorigins.win/raw?url=';
+        // Multiple CORS proxies for fallback
+        this.corsProxies = [
+            'https://api.allorigins.win/raw?url=',
+            'https://corsproxy.io/?',
+            'https://api.codetabs.com/v1/proxy?quest='
+        ];
 
         // Predefined RSS feed URLs for SF news sources
         this.sources = {
+            kqed: {
+                name: 'KQED',
+                url: 'https://www.kqed.org/news/feed'
+            },
             sfchronicle: {
                 name: 'SF Chronicle',
                 url: 'https://www.sfchronicle.com/bayarea/feed/Bay-Area-News-702.php'
@@ -18,10 +26,6 @@ class NewsService {
                 name: 'SFGate',
                 url: 'https://www.sfgate.com/bayarea/feed/Bay-Area-News-702.php'
             },
-            kqed: {
-                name: 'KQED',
-                url: 'https://www.kqed.org/news/feed'
-            },
             sfexaminer: {
                 name: 'SF Examiner',
                 url: 'https://www.sfexaminer.com/feed/'
@@ -29,6 +33,14 @@ class NewsService {
             missionlocal: {
                 name: 'Mission Local',
                 url: 'https://missionlocal.org/feed/'
+            },
+            hoodline: {
+                name: 'Hoodline SF',
+                url: 'https://hoodline.com/san-francisco/rss'
+            },
+            sfstandard: {
+                name: 'SF Standard',
+                url: 'https://sfstandard.com/feed/'
             }
         };
 
@@ -120,6 +132,12 @@ class NewsService {
                 .replace(/&lt;/g, '<')
                 .replace(/&gt;/g, '>')
                 .replace(/&quot;/g, '"')
+                .replace(/&#8217;/g, "'")
+                .replace(/&#8216;/g, "'")
+                .replace(/&#8220;/g, '"')
+                .replace(/&#8221;/g, '"')
+                .replace(/&#8211;/g, '-')
+                .replace(/&#8212;/g, '—')
                 .trim()
                 .substring(0, 200);
 
@@ -138,6 +156,42 @@ class NewsService {
     }
 
     /**
+     * Try fetching with multiple CORS proxies
+     */
+    async fetchWithProxy(feedUrl) {
+        let lastError = null;
+
+        for (const proxy of this.corsProxies) {
+            try {
+                const proxyUrl = `${proxy}${encodeURIComponent(feedUrl)}`;
+                const response = await fetch(proxyUrl, {
+                    headers: {
+                        'Accept': 'application/rss+xml, application/xml, text/xml, */*'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const xmlText = await response.text();
+
+                // Verify it's valid XML
+                if (!xmlText.includes('<rss') && !xmlText.includes('<feed') && !xmlText.includes('<item')) {
+                    throw new Error('Invalid RSS response');
+                }
+
+                return xmlText;
+            } catch (error) {
+                console.warn(`Proxy ${proxy} failed:`, error.message);
+                lastError = error;
+            }
+        }
+
+        throw lastError || new Error('All proxies failed');
+    }
+
+    /**
      * Fetch news from RSS feed
      */
     async fetchNews(maxItems = 10) {
@@ -153,14 +207,7 @@ class NewsService {
         }
 
         try {
-            const proxyUrl = `${this.corsProxy}${encodeURIComponent(feedUrl)}`;
-            const response = await fetch(proxyUrl);
-
-            if (!response.ok) {
-                throw new Error(`Failed to fetch news: ${response.status}`);
-            }
-
-            const xmlText = await response.text();
+            const xmlText = await this.fetchWithProxy(feedUrl);
             const items = this.parseRSS(xmlText);
 
             // Update cache
