@@ -71,6 +71,34 @@ class TransitBoardApp {
     }
 
     /**
+     * Create TIME flaps - yellow background
+     */
+    timeFlaps(text) {
+        return text.split('').map(char => {
+            const displayChar = char === ' ' ? '&nbsp;' : this.escapeHtml(char);
+            return `<span class="flap-char time">${displayChar}</span>`;
+        }).join('');
+    }
+
+    /**
+     * Create colored flaps with specified color class
+     */
+    colorFlaps(text, colorClass) {
+        return text.split('').map(char => {
+            const displayChar = char === ' ' ? '&nbsp;' : this.escapeHtml(char);
+            return `<span class="flap-char ${colorClass}">${displayChar}</span>`;
+        }).join('');
+    }
+
+    /**
+     * Row colors for cycling through
+     */
+    getRowColor(index) {
+        const colors = ['color-yellow', 'color-orange', 'color-red', 'color-pink', 'color-blue', 'color-green', 'color-teal'];
+        return colors[index % colors.length];
+    }
+
+    /**
      * Create success-colored flaps (for "NOW" etc)
      */
     successFlaps(text) {
@@ -92,6 +120,9 @@ class TransitBoardApp {
 
         // Apply theme
         this.applyTheme();
+
+        // Initialize audio
+        this.initAudio();
 
         // Set up event listeners
         this.setupEventListeners();
@@ -370,29 +401,30 @@ class TransitBoardApp {
     renderWeather(container, data) {
         const { current, forecast } = data;
         const unit = this.settings.tempUnit === 'celsius' ? 'C' : 'F';
-        const tempStr = `${current.temp}°${unit}`.padStart(5, ' ');
+        const tempStr = `${current.temp}°${unit}`;
 
         let html = `
             <div class="weather-main">
                 <span class="weather-icon">${current.icon}</span>
                 <div class="weather-temp-display">
-                    <div class="flap-row large">${this.toFlaps(tempStr)}</div>
+                    <div class="flap-row large">${this.colorFlaps(tempStr, 'color-orange')}</div>
                 </div>
             </div>
             <div class="weather-condition">
-                ${this.flapRow(current.condition, 'small', 20)}
+                <div class="flap-row small">${this.toFlaps(current.condition.toUpperCase().substring(0, 20))}</div>
             </div>
         `;
 
         if (forecast && forecast.length > 0) {
             html += `<div class="weather-forecast">`;
-            forecast.slice(0, 5).forEach(day => {
+            forecast.slice(0, 5).forEach((day, idx) => {
                 const highLow = `${day.high}/${day.low}`;
+                const color = this.getRowColor(idx);
                 html += `
                     <div class="forecast-day">
-                        ${this.flapRow(day.day, 'small', 3)}
+                        <div class="flap-row small">${this.colorFlaps(day.day.toUpperCase().padEnd(3, ' ').substring(0, 3), color)}</div>
                         <span class="forecast-icon">${day.icon}</span>
-                        ${this.flapRow(highLow, 'small', 7)}
+                        <div class="flap-row small">${this.colorFlaps(highLow.padEnd(7, ' '), color)}</div>
                     </div>
                 `;
             });
@@ -400,6 +432,7 @@ class TransitBoardApp {
         }
 
         container.innerHTML = html;
+        this.playFlapSound();
     }
 
     renderWeatherPlaceholder(container) {
@@ -469,20 +502,23 @@ class TransitBoardApp {
             return;
         }
 
-        container.innerHTML = departures.slice(0, 6).map(dep => {
+        container.innerHTML = departures.slice(0, 6).map((dep, idx) => {
             const line = dep.line.toString().padEnd(3, ' ').substring(0, 3);
-            const dest = (dep.destination || '').substring(0, 18).padEnd(18, ' ');
+            const dest = (dep.destination || '').substring(0, 16).padEnd(16, ' ');
             const mins = dep.minutesAway;
-            const timeStr = mins === 0 ? 'NOW' : `${mins}M`.padStart(4, ' ');
-            const timeFlaps = mins === 0 ? this.successFlaps(timeStr) : this.toFlaps(timeStr);
+            const timeStr = mins === 0 ? 'NOW ' : `${mins}M`.padStart(4, ' ');
+            const rowColor = this.getRowColor(idx);
+
+            // Times are always yellow, NOW is green
+            const timeFlaps = mins === 0 ? this.successFlaps(timeStr) : this.timeFlaps(timeStr);
 
             return `
                 <div class="transit-row">
                     <div class="transit-line-display">
-                        <div class="flap-row small">${this.accentFlaps(line)}</div>
+                        <div class="flap-row small">${this.colorFlaps(line, rowColor)}</div>
                     </div>
                     <div class="transit-destination-display">
-                        <div class="flap-row small">${this.toFlaps(dest.toUpperCase())}</div>
+                        <div class="flap-row small">${this.colorFlaps(dest.toUpperCase(), rowColor)}</div>
                     </div>
                     <div class="transit-time-display">
                         <div class="flap-row small">${timeFlaps}</div>
@@ -490,6 +526,7 @@ class TransitBoardApp {
                 </div>
             `;
         }).join('');
+        this.playFlapSound();
     }
 
     renderTransitPlaceholder(container) {
@@ -538,26 +575,23 @@ class TransitBoardApp {
             return;
         }
 
-        container.innerHTML = news.slice(0, 5).map(item => {
+        container.innerHTML = news.slice(0, 5).map((item, idx) => {
             const time = NewsService.formatRelativeTime(item.pubDate).toUpperCase();
-            const title = item.title.toUpperCase().substring(0, 45);
-            // Split long titles into multiple lines
-            const lines = [];
-            for (let i = 0; i < title.length; i += 30) {
-                lines.push(title.substring(i, i + 30).padEnd(30, ' '));
-            }
+            const title = item.title.toUpperCase().substring(0, 40);
+            const rowColor = this.getRowColor(idx);
 
             return `
                 <div class="news-item" onclick="window.open('${item.link}', '_blank')">
                     <div class="news-time-display">
-                        <div class="flap-row small">${this.accentFlaps(time.padEnd(8, ' ').substring(0, 8))}</div>
+                        <div class="flap-row small">${this.timeFlaps(time.padEnd(6, ' ').substring(0, 6))}</div>
                     </div>
                     <div class="news-headline-display">
-                        ${lines.map(line => `<div class="flap-row small">${this.toFlaps(line)}</div>`).join('')}
+                        <div class="flap-row small">${this.colorFlaps(title.padEnd(40, ' '), rowColor)}</div>
                     </div>
                 </div>
             `;
         }).join('');
+        this.playFlapSound();
     }
 
     renderNewsError(container, message) {
@@ -611,10 +645,11 @@ class TransitBoardApp {
             return;
         }
 
-        container.innerHTML = events.slice(0, 5).map(event => {
+        container.innerHTML = events.slice(0, 5).map((event, idx) => {
             const dateStr = CalendarService.formatEventDate(event).toUpperCase().substring(0, 8);
             const timeStr = CalendarService.formatEventTime(event).toUpperCase().substring(0, 8);
             const title = event.title.toUpperCase().substring(0, 22).padEnd(22, ' ');
+            const rowColor = this.getRowColor(idx);
 
             let eventClass = 'calendar-event';
             if (event.isNow) eventClass += ' now';
@@ -623,11 +658,11 @@ class TransitBoardApp {
             return `
                 <div class="${eventClass}">
                     <div class="event-time-display">
-                        <div class="flap-row small">${this.toFlaps(dateStr.padEnd(8, ' '))}</div>
-                        <div class="flap-row small">${this.accentFlaps(timeStr.padEnd(8, ' '))}</div>
+                        <div class="flap-row small">${this.colorFlaps(dateStr.padEnd(8, ' '), rowColor)}</div>
+                        <div class="flap-row small">${this.timeFlaps(timeStr.padEnd(8, ' '))}</div>
                     </div>
                     <div class="event-details-display">
-                        <div class="flap-row small">${this.toFlaps(title)}</div>
+                        <div class="flap-row small">${this.colorFlaps(title, rowColor)}</div>
                         ${event.location ? `<div class="flap-row small">${this.toFlaps(event.location.toUpperCase().substring(0, 22).padEnd(22, ' '))}</div>` : ''}
                     </div>
                 </div>
@@ -673,6 +708,81 @@ class TransitBoardApp {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    // =============================================
+    // AUDIO - Split-flap flip sound
+    // =============================================
+
+    initAudio() {
+        // Create audio context for generating flip sounds
+        this.audioContext = null;
+        this.audioEnabled = true;
+
+        // Initialize on first user interaction (browsers require this)
+        document.addEventListener('click', () => {
+            if (!this.audioContext) {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }, { once: true });
+    }
+
+    playFlapSound() {
+        if (!this.audioEnabled) return;
+
+        // Initialize audio context if needed
+        if (!this.audioContext) {
+            try {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.log('Audio not available');
+                return;
+            }
+        }
+
+        // Create a short click/flap sound
+        const ctx = this.audioContext;
+        const now = ctx.currentTime;
+
+        // Multiple rapid clicks to simulate flipping
+        for (let i = 0; i < 8; i++) {
+            const clickTime = now + (i * 0.04) + (Math.random() * 0.02);
+
+            // Noise burst for the mechanical click
+            const bufferSize = ctx.sampleRate * 0.015; // 15ms
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+
+            for (let j = 0; j < bufferSize; j++) {
+                // Decaying noise
+                const decay = 1 - (j / bufferSize);
+                data[j] = (Math.random() * 2 - 1) * decay * 0.3;
+            }
+
+            const source = ctx.createBufferSource();
+            source.buffer = buffer;
+
+            // Bandpass filter to make it sound more mechanical
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = 2000 + Math.random() * 1000;
+            filter.Q.value = 5;
+
+            // Gain control
+            const gain = ctx.createGain();
+            gain.gain.value = 0.15;
+
+            source.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+
+            source.start(clickTime);
+        }
+    }
+
+    toggleAudio() {
+        this.audioEnabled = !this.audioEnabled;
+        return this.audioEnabled;
     }
 }
 

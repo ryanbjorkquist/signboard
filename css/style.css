@@ -56,7 +56,7 @@ html, body {
 }
 
 body {
-    font-family: 'Roboto Mono', 'Courier New', monospace;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     background: var(--board-bg);
     color: var(--flap-text);
 }
@@ -217,45 +217,88 @@ body {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    padding: 3px 0;
-    font-size: 18px;
+    padding: 4px 0;
+    font-size: 22px;
     line-height: 1;
 }
 
 .flap-row.large {
-    font-size: 32px;
+    font-size: 48px;
 }
 
 .flap-row.small {
-    font-size: 14px;
+    font-size: 18px;
 }
 
 .flap-row.medium {
-    font-size: 20px;
+    font-size: 26px;
 }
 
-/* Accent flaps - YELLOW background, black text (like Oat Foundry) */
-.flap-char.accent {
+/* TIME flaps - YELLOW background, black text */
+.flap-char.time, .flap-char.accent {
     background: #f5c518;
     color: #000;
 }
 
-.flap-char.accent::before {
+.flap-char.time::before, .flap-char.accent::before {
     background: rgba(255,255,255,0.15);
 }
 
-.flap-char.accent::after {
+.flap-char.time::after, .flap-char.accent::after {
     background: #9a7b00;
 }
 
+/* ROW COLORS - Oat Foundry rainbow style */
+.flap-char.color-yellow {
+    background: #e6d400;
+    color: #000;
+}
+.flap-char.color-yellow::after { background: #8a8000; }
+
+.flap-char.color-orange {
+    background: #ff9500;
+    color: #000;
+}
+.flap-char.color-orange::after { background: #995900; }
+
+.flap-char.color-red {
+    background: #ff3b30;
+    color: #fff;
+}
+.flap-char.color-red::after { background: #992320; }
+
+.flap-char.color-pink {
+    background: #ff6b8a;
+    color: #000;
+}
+.flap-char.color-pink::after { background: #994050; }
+
+.flap-char.color-blue {
+    background: #007aff;
+    color: #fff;
+}
+.flap-char.color-blue::after { background: #004999; }
+
+.flap-char.color-green {
+    background: #34c759;
+    color: #000;
+}
+.flap-char.color-green::after { background: #1f7735; }
+
+.flap-char.color-teal {
+    background: #5ac8fa;
+    color: #000;
+}
+.flap-char.color-teal::after { background: #367896; }
+
 /* Success flaps - GREEN background */
 .flap-char.success {
-    background: #22c55e;
+    background: #34c759;
     color: #000;
 }
 
 .flap-char.success::after {
-    background: #15803d;
+    background: #1f7735;
 }
 
 /* =============================================
