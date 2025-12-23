@@ -49,13 +49,12 @@ class CalendarService {
      * Fetch upcoming events from public calendar
      */
     async getUpcomingEvents(days = 7, maxResults = 15) {
-        // Check cache
+        // TEMPORARILY DISABLE CACHE FOR DEBUGGING
+        this.cache = null;
+
         const now = Date.now();
-        if (this.cache && (now - this.cacheTime) < this.cacheDuration) {
-            console.log('Calendar: returning cached data');
-            return this.cache;
-        }
-        console.log('Calendar: fetching fresh data from API');
+        console.log('%c CALENDAR SERVICE CALLED', 'background: blue; color: white; font-size: 16px');
+        console.log('Calendar: fetching fresh data from API (cache disabled for debug)');
 
         if (!this.isConfigured()) {
             throw new Error('Calendar service not configured');
@@ -108,7 +107,9 @@ class CalendarService {
      */
     formatEvent(event) {
         // Debug: log raw event to see what we're getting
-        console.log('Raw calendar event:', event);
+        console.log('%c RAW EVENT FROM GOOGLE:', 'background: green; color: white');
+        console.log('summary field:', event.summary);
+        console.log('Full event object:', event);
 
         const start = event.start.dateTime
             ? new Date(event.start.dateTime)
