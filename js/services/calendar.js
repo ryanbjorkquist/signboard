@@ -53,6 +53,7 @@ class CalendarService {
         this.cache = null;
 
         const now = Date.now();
+        alert('🔔 CALENDAR API CALLED - Check console for details!');
         console.log('%c CALENDAR SERVICE CALLED', 'background: blue; color: white; font-size: 16px');
         console.log('Calendar: fetching fresh data from API (cache disabled for debug)');
 
