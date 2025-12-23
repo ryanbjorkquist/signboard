@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Calendar API Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #0f0; }
+        input { width: 400px; padding: 8px; margin: 10px 0; }
+        button { padding: 10px 20px; background: #0f0; border: none; cursor: pointer; }
+        pre { background: #000; padding: 15px; overflow: auto; max-height: 600px; }
+        .error { color: #f00; }
+        .success { color: #0f0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Google Calendar API Direct Test</h1>
+
+    <div>
+        <label>Calendar ID:</label><br>
+        <input type="text" id="calendarId" value="ebgs7j9vj5tn2gs6gt3f2gvgtc@group.calendar.google.com">
+    </div>
+
+    <div>
+        <label>Google API Key:</label><br>
+        <input type="password" id="apiKey" placeholder="Paste your API key here">
+    </div>
+
+    <button onclick="testAPI()">Test Calendar API</button>
+
+    <div id="results"></div>
+
+    <script>
+        async function testAPI() {
+            const calendarId = document.getElementById('calendarId').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const results = document.getElementById('results');
+
+            if (!apiKey) {
+                results.innerHTML = '<p class="error">Please enter your API key!</p>';
+                return;
+            }
+
+            results.innerHTML = '<p>Fetching events...</p>';
+
+            const timeMin = new Date().toISOString();
+            const timeMax = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+            const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?key=${apiKey}&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime&maxResults=5`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    results.innerHTML = `<p class="error">ERROR: ${data.error.message}</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    return;
+                }
+
+                let html = '<h2 class="success">✅ API Response:</h2>';
+                html += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+
+                html += '<h2>📋 Events Found:</h2>';
+                if (data.items && data.items.length > 0) {
+                    data.items.forEach((event, idx) => {
+                        html += `<h3>Event ${idx + 1}:</h3>`;
+                        html += `<pre>`;
+                        html += `ID: ${event.id}\n`;
+                        html += `SUMMARY: ${event.summary || '❌ MISSING!'}\n`;
+                        html += `START: ${event.start.dateTime || event.start.date}\n`;
+                        html += `END: ${event.end.dateTime || event.end.date}\n`;
+                        html += `\nAll fields: ${Object.keys(event).join(', ')}\n`;
+                        html += `</pre>`;
+                    });
+                } else {
+                    html += '<p>No events found</p>';
+                }
+
+                results.innerHTML = html;
+            } catch (error) {
+                results.innerHTML = `<p class="error">ERROR: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
