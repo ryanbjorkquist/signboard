@@ -213,11 +213,15 @@
         </div>
     </div>
 
-    <!-- Scripts - cache bust with version -->
-    <script src="js/splitflap.js?v=4"></script>
-    <script src="js/services/weather.js?v=4"></script>
-    <script src="js/services/transit.js?v=4"></script>
-    <script src="js/services/calendar.js?v=4"></script>
-    <script src="js/app.js?v=4"></script>
+    <!-- Scripts - aggressive cache bust -->
+    <script>
+        // Force cache refresh with timestamp
+        const ts = new Date().getTime();
+        document.write('<script src="js/splitflap.js?ts=' + ts + '"><\/script>');
+        document.write('<script src="js/services/weather.js?ts=' + ts + '"><\/script>');
+        document.write('<script src="js/services/transit.js?ts=' + ts + '"><\/script>');
+        document.write('<script src="js/services/calendar.js?ts=' + ts + '"><\/script>');
+        document.write('<script src="js/app.js?ts=' + ts + '"><\/script>');
+    </script>
 </body>
 </html>
