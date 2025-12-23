@@ -107,9 +107,15 @@ class CalendarService {
      */
     formatEvent(event) {
         // Debug: log raw event to see what we're getting
-        console.log('%c RAW EVENT FROM GOOGLE:', 'background: green; color: white');
-        console.log('summary field:', event.summary);
-        console.log('Full event object:', event);
+        console.log('%c RAW EVENT FROM GOOGLE:', 'background: green; color: white; font-size: 14px; padding: 4px;');
+        console.log('Event ID:', event.id);
+        console.log('summary field type:', typeof event.summary);
+        console.log('summary field value:', event.summary);
+        console.log('summary is undefined?', event.summary === undefined);
+        console.log('summary is null?', event.summary === null);
+        console.log('summary is empty string?', event.summary === '');
+        console.log('All event keys:', Object.keys(event));
+        console.log('Full event object:', JSON.stringify(event, null, 2));
 
         const start = event.start.dateTime
             ? new Date(event.start.dateTime)
@@ -130,6 +136,10 @@ class CalendarService {
 
         // Get title - try summary first, then other fields
         const title = event.summary || event.title || event.subject || '(No title)';
+
+        console.log('%c TITLE RESOLUTION:', 'background: orange; color: white; font-size: 14px; padding: 4px;');
+        console.log('Final title value:', title);
+        console.log('Title came from summary?', !!event.summary);
 
         // Get color - colorId maps to Google's color scheme
         const colorId = event.colorId || 'default';
