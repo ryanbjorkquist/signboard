@@ -52,8 +52,10 @@ class CalendarService {
         // Check cache
         const now = Date.now();
         if (this.cache && (now - this.cacheTime) < this.cacheDuration) {
+            console.log('Calendar: returning cached data');
             return this.cache;
         }
+        console.log('Calendar: fetching fresh data from API');
 
         if (!this.isConfigured()) {
             throw new Error('Calendar service not configured');
@@ -83,6 +85,11 @@ class CalendarService {
             }
 
             const data = await response.json();
+
+            // Debug: log the raw API response to see what Google returns
+            console.log('Google Calendar API raw response:', data);
+            console.log('Raw items from API:', data.items);
+
             const events = (data.items || []).map(event => this.formatEvent(event));
 
             // Update cache
