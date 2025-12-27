@@ -1,4 +1,5 @@
 /* SF Transit Board - Full Split-Flap Display */
+/* Optimized for 27" 5K Display (5120 x 2880) - Kiosk Mode */
 
 :root {
     --board-bg: #000;
@@ -11,6 +12,11 @@
     --accent-dim: #aa8800;
     --success: #00ff00;
     --label-color: #666;
+
+    /* 5K Display optimizations */
+    --base-font-size: 28px;  /* Larger for 5K readability */
+    --title-size: 48px;
+    --spacing: 16px;
 }
 
 [data-theme="light"] {
@@ -86,7 +92,7 @@ body {
 
 .board-title {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 28px;
+    font-size: var(--title-size);
     font-weight: 700;
     letter-spacing: 0.08em;
     color: #fff;
@@ -153,7 +159,7 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    padding: 12px;
+    padding: var(--spacing);  /* 16px for 5K */
 }
 
 .section-header {
@@ -198,11 +204,11 @@ body {
     color: #fff;
     font-weight: 800;
     font-size: inherit;
-    border-radius: 3px;
-    margin: 2px 1px;
+    border-radius: 4px;
+    margin: 3px 2px;  /* Increased spacing for 5K */
     position: relative;
     box-shadow:
-        0 2px 4px rgba(0,0,0,0.5),
+        0 3px 6px rgba(0,0,0,0.6),
         inset 0 0 0 1px rgba(255,255,255,0.05);
 }
 
@@ -236,21 +242,21 @@ body {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    padding: 4px 0;
-    font-size: 22px;
+    padding: 6px 0;
+    font-size: var(--base-font-size);  /* 28px for 5K */
     line-height: 1;
 }
 
 .flap-row.large {
-    font-size: 48px;
+    font-size: 64px;  /* Larger for 5K */
 }
 
 .flap-row.small {
-    font-size: 18px;
+    font-size: 24px;  /* Larger for 5K */
 }
 
 .flap-row.medium {
-    font-size: 26px;
+    font-size: 36px;  /* Larger for 5K */
 }
 
 /* TIME flaps - YELLOW background, black text */

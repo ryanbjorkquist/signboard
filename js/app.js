@@ -133,17 +133,18 @@ class TransitBoardApp {
 
     /**
      * Define fixed row width for transit (consistent card count)
+     * Optimized for 5K display (5120 x 2880)
      */
     get TRANSIT_ROW_WIDTH() {
-        return 40; // Total characters per transit row
+        return 55; // Wider for 5K display
     }
 
     get TRANSIT_LINE_WIDTH() {
-        return 4; // Line number width
+        return 5; // Line number width
     }
 
     get TRANSIT_TIME_WIDTH() {
-        return 5; // Time display width
+        return 6; // Time display width
     }
 
     get TRANSIT_DEST_WIDTH() {
@@ -151,7 +152,7 @@ class TransitBoardApp {
     }
 
     get WEATHER_ROW_WIDTH() {
-        return 40; // Same as transit for consistency
+        return 55; // Wider for 5K display
     }
 
     /**
@@ -590,7 +591,7 @@ class TransitBoardApp {
             return;
         }
 
-        container.innerHTML = departures.slice(0, 4).map((dep, idx) => {
+        container.innerHTML = departures.slice(0, 6).map((dep, idx) => {  // Show 6 departures on 5K display
             // Line number - padded to fixed width, YELLOW
             const line = dep.line.toString().toUpperCase().padEnd(this.TRANSIT_LINE_WIDTH, ' ').substring(0, this.TRANSIT_LINE_WIDTH);
 
@@ -670,7 +671,7 @@ class TransitBoardApp {
         }
 
         try {
-            const events = await calendarService.getUpcomingEvents(this.settings.calendarDays, 12);
+            const events = await calendarService.getUpcomingEvents(this.settings.calendarDays, 20);
             this.renderCalendar(listEl, events);
         } catch (error) {
             console.error('Calendar error:', error);
@@ -688,11 +689,8 @@ class TransitBoardApp {
             return;
         }
 
-        // Debug: log events to see what we're getting
-        console.log('Calendar events to render:', events);
-
-        // Show up to 10 events since calendar has full right side
-        container.innerHTML = events.slice(0, 10).map((event, idx) => {
+        // Show up to 15 events on 5K display with full right side
+        container.innerHTML = events.slice(0, 15).map((event, idx) => {
             const dateStr = CalendarService.formatEventDate(event).toUpperCase().substring(0, 10);
             const timeStr = CalendarService.formatEventTime(event).toUpperCase().substring(0, 8);
             const title = event.title.toUpperCase().substring(0, 28).padEnd(28, ' ');
