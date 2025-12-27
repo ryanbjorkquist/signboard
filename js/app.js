@@ -661,29 +661,13 @@ class TransitBoardApp {
     // =============================================
 
     async updateCalendar() {
-        console.log('%c CALENDAR UPDATE CALLED', 'background: purple; color: white; font-size: 16px; padding: 4px;');
-
         const listEl = document.getElementById('calendarList');
-        console.log('calendarList element found?', !!listEl);
-        if (!listEl) {
-            console.error('Calendar list element not found!');
-            return;
-        }
-
-        console.log('Checking if calendar service is configured...');
-        console.log('calendarService.apiKey:', calendarService.apiKey ? '***SET***' : 'NOT SET');
-        console.log('calendarService.calendarId:', calendarService.calendarId || 'NOT SET');
-        console.log('this.settings.googleApiKey:', this.settings.googleApiKey ? '***SET***' : 'NOT SET');
-        console.log('this.settings.calendarId:', this.settings.calendarId || 'NOT SET');
-        console.log('isConfigured():', calendarService.isConfigured());
+        if (!listEl) return;
 
         if (!calendarService.isConfigured()) {
-            console.warn('Calendar service NOT configured - showing placeholder');
             this.renderCalendarPlaceholder(listEl);
             return;
         }
-
-        console.log('Calendar service IS configured - fetching events...');
 
         try {
             const events = await calendarService.getUpcomingEvents(this.settings.calendarDays, 12);

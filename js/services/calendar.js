@@ -49,13 +49,12 @@ class CalendarService {
      * Fetch upcoming events from public calendar
      */
     async getUpcomingEvents(days = 7, maxResults = 15) {
-        // TEMPORARILY DISABLE CACHE FOR DEBUGGING
-        this.cache = null;
-
         const now = Date.now();
-        alert('🔔 CALENDAR API CALLED - Check console for details!');
-        console.log('%c CALENDAR SERVICE CALLED', 'background: blue; color: white; font-size: 16px');
-        console.log('Calendar: fetching fresh data from API (cache disabled for debug)');
+
+        // Return cached data if still valid
+        if (this.cache && (now - this.cacheTime) < this.cacheDuration) {
+            return this.cache;
+        }
 
         if (!this.isConfigured()) {
             throw new Error('Calendar service not configured');
@@ -107,17 +106,6 @@ class CalendarService {
      * Format a calendar event
      */
     formatEvent(event) {
-        // Debug: log raw event to see what we're getting
-        console.log('%c RAW EVENT FROM GOOGLE:', 'background: green; color: white; font-size: 14px; padding: 4px;');
-        console.log('Event ID:', event.id);
-        console.log('summary field type:', typeof event.summary);
-        console.log('summary field value:', event.summary);
-        console.log('summary is undefined?', event.summary === undefined);
-        console.log('summary is null?', event.summary === null);
-        console.log('summary is empty string?', event.summary === '');
-        console.log('All event keys:', Object.keys(event));
-        console.log('Full event object:', JSON.stringify(event, null, 2));
-
         const start = event.start.dateTime
             ? new Date(event.start.dateTime)
             : new Date(event.start.date);
@@ -137,10 +125,6 @@ class CalendarService {
 
         // Get title - try summary first, then other fields
         const title = event.summary || event.title || event.subject || '(No title)';
-
-        console.log('%c TITLE RESOLUTION:', 'background: orange; color: white; font-size: 14px; padding: 4px;');
-        console.log('Final title value:', title);
-        console.log('Title came from summary?', !!event.summary);
 
         // Get color - colorId maps to Google's color scheme
         const colorId = event.colorId || 'default';
