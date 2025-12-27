@@ -267,48 +267,48 @@ body {
     background: #9a7b00;
 }
 
-/* ROW COLORS - Oat Foundry rainbow style */
+/* ROW COLORS - Black cards with colored text */
 .flap-char.color-yellow {
-    background: #e6d400;
-    color: #000;
+    background: #2a2a2a;
+    color: #e6d400;
 }
-.flap-char.color-yellow::after { background: #8a8000; }
+.flap-char.color-yellow::after { background: #000; }
 
 .flap-char.color-orange {
-    background: #ff9500;
-    color: #000;
+    background: #2a2a2a;
+    color: #ff9500;
 }
-.flap-char.color-orange::after { background: #995900; }
+.flap-char.color-orange::after { background: #000; }
 
 .flap-char.color-red {
-    background: #ff3b30;
-    color: #fff;
+    background: #2a2a2a;
+    color: #ff3b30;
 }
-.flap-char.color-red::after { background: #992320; }
+.flap-char.color-red::after { background: #000; }
 
 .flap-char.color-pink {
-    background: #ff6b8a;
-    color: #000;
+    background: #2a2a2a;
+    color: #ff6b8a;
 }
-.flap-char.color-pink::after { background: #994050; }
+.flap-char.color-pink::after { background: #000; }
 
 .flap-char.color-blue {
-    background: #007aff;
-    color: #fff;
+    background: #2a2a2a;
+    color: #007aff;
 }
-.flap-char.color-blue::after { background: #004999; }
+.flap-char.color-blue::after { background: #000; }
 
 .flap-char.color-green {
-    background: #34c759;
-    color: #000;
+    background: #2a2a2a;
+    color: #34c759;
 }
-.flap-char.color-green::after { background: #1f7735; }
+.flap-char.color-green::after { background: #000; }
 
 .flap-char.color-teal {
-    background: #5ac8fa;
-    color: #000;
+    background: #2a2a2a;
+    color: #5ac8fa;
 }
-.flap-char.color-teal::after { background: #367896; }
+.flap-char.color-teal::after { background: #000; }
 
 /* Success flaps - GREEN background */
 .flap-char.success {
